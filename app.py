@@ -210,6 +210,31 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
 # 1. إعدادات الصفحة لتناسب الموبايل
 st.set_page_config(page_title="نسر البورصة المصرية", layout="centered")
 
+import streamlit.components.v1 as components
+
+# كود جافاسكريبت عنيف لاصطياد وإخفاء العلامة المائية بالقوة كل نص ثانية
+components.html("""
+<script>
+    const hideWatermarks = () => {
+        const selectors = [
+            '.viewerBadge_container',
+            '.viewerBadge_link',
+            '[data-testid="stAppDeployButton"]',
+            '[data-testid="viewerBadge"]',
+            '#stDeployButton'
+        ];
+        selectors.forEach(sel => {
+            const elements = window.parent.document.querySelectorAll(sel);
+            elements.forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+        });
+    };
+    setInterval(hideWatermarks, 500);
+    hideWatermarks();
+</script>
+""", height=0)
+
 # CSS مخصص لتحسين الخطوط والأنيميشن
 st.markdown("""
 <style>
