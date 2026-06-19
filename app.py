@@ -529,293 +529,298 @@ egx30_list = ["COMI.CA", "FWRY.CA", "EFIH.CA", "EGAL.CA", "ABUK.CA", "TMGH.CA", 
 egx70_list = [t for t in stock_names.keys() if t not in egx30_list]
 egx100_list = egx30_list + egx70_list
 
-st.markdown("---")
-st.subheader("⭐ الأسهم المفضلة (متابعة حية)")
-st.write("الأسهم اللي هتختارها هنا هتتحفظ في حسابك السحابي وهيتعملها تحليل فوري أول ما تفتح البرنامج.")
+favorites_list = st.session_state['user_data'].get('favorites', [])
+portfolio_list = st.session_state['user_data'].get('portfolio', [])
+st.markdown('---')
+tabs = st.tabs(['📊 رادار السوق', '⭐ المفضلة', '💼 محفظتي الذكية'])
 
-favorites_list = st.session_state["user_data"].get("favorites", [])
+with tabs[0]:
 
-new_favorites = st.multiselect(
-    "إدارة قائمتي المفضلة:",
-    options=list(stock_names.keys()),
-    default=[x for x in favorites_list if x in stock_names.keys()],
-    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}"
-)
+    specific_search_stocks = st.multiselect(
+        "ابحث باسم السهم (عربي) أو الكود (إنجليزي):",
+        options=list(stock_names.keys()),
+        default=[],
+        format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}"
+    )
 
-if new_favorites != favorites_list:
-    st.session_state["user_data"]["favorites"] = new_favorites
-    # Sync with Firebase
-    try:
-        fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
-    except Exception as e:
-        st.error(f"خطأ في الحفظ السحابي: {str(e)}")
-    favorites_list = new_favorites
+    st.subheader("📋 طريقة اختيار الأسهم للمراقبة")
+    selection_method = st.radio(
+        "هل ترغب في فحص مجموعات أو مؤشرات؟",
+        ["تحديد يدوي (حسب المؤشرات)", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)", "فحص قائمتي المفضلة", "لا أريد (سأكتفي بأسهم السيرش فقط)"],
+        horizontal=True
+    )
 
-if favorites_list:
-    st.write("📊 **إشارات المفضلة الآن:**")
-    cols = st.columns(min(len(favorites_list), 4) if len(favorites_list) > 0 else 1)
-    
-    for i, fav_ticker in enumerate(favorites_list):
-        with cols[i % 4]:
-            arabic_name = stock_names.get(fav_ticker, "")
-            sector_name = stock_sectors.get(fav_ticker, "غير محدد")
-            index_name = "EGX30" if fav_ticker in egx30_list else ("EGX70" if fav_ticker in egx70_list else "-")
-            
-            res = analyze_stock_cached(fav_ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
-            if res:
-                signal = res['التوجيه الحالي'].split(' ')[0] # just the emoji
-                st.markdown(f"<div style='border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;'><b>{fav_ticker.replace('.CA', '')}</b><br>{signal} {res['السعر الحالي']}<br><span style='font-size:12px;color:#666;'>دخول: {res['الدخول المقترح']} | هدف: {res['الهدف المتوقع']}<br>وقف: {res['وقف الخسارة']}</span></div>", unsafe_allow_html=True)
+    # نبدأ القائمة بالأسهم اللي اختارها في السيرش المخصص
+    selected_stocks = list(specific_search_stocks)
+
+    if selection_method == "تحديد يدوي (حسب المؤشرات)":
+        st.write("💡 ملحوظة: الفحص بياخد حوالي ثانية لكل سهم، اختر أسهمك بعناية.")
+        cols = st.columns(3)
+        with cols[0]:
+            with st.expander("مؤشر EGX 30", expanded=True):
+                selected_egx30 = st.multiselect(
+                    "اختر أسهم EGX30:",
+                    options=egx30_list,
+                    default=[],
+                    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
+                )
+                selected_stocks.extend(selected_egx30)
+        with cols[1]:
+            with st.expander("مؤشر EGX 70", expanded=True):
+                selected_egx70 = st.multiselect(
+                    "اختر أسهم EGX70:",
+                    options=egx70_list,
+                    default=[],
+                    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
+                )
+                selected_stocks.extend(selected_egx70)
+        with cols[2]:
+            with st.expander("مؤشر EGX 100", expanded=True):
+                selected_egx100 = st.multiselect(
+                    "اختر أسهم EGX100:",
+                    options=egx100_list,
+                    default=[],
+                    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
+                )
+                selected_stocks.extend(selected_egx100)
+    elif selection_method == "فحص قائمتي المفضلة":
+        selected_stocks.extend(favorites_list)
+    elif selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
+        pass
+    else:
+        if "EGX30" in selection_method:
+            selected_stocks.extend(egx30_list)
+        elif "EGX70" in selection_method:
+            selected_stocks.extend(egx70_list)
+        elif "البورصة بالكامل" in selection_method:
+            selected_stocks.extend(egx100_list)
+
+        st.info(f"تم تحديد {len(selected_stocks)} سهم للفحص التلقائي. (قد يستغرق الفحص دقيقة أو أكثر)")
+
+    # منع تكرار الأسهم في حالة اختيار نفس السهم من السيرش ومن القطاع
+    selected_stocks = list(dict.fromkeys(selected_stocks))
+
+    # فلاتر العرض السريعة
+    st.subheader("🔎 فلاتر العرض السريعة")
+    filter_signal = st.selectbox("تصفية حسب الإشارة:", ["عرض الكل", "فرص الشراء فقط", "الأسهم السلبية فقط"])
+
+    # 4. زرار تشغيل الفحص
+    if st.button("🔄 فحص السوق وتحديث التوجيهات"):
+        if not selected_stocks:
+            st.warning("برجاء اختيار أسهم للفحص أولاً!")
+        else:
+            results = []
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            total = len(selected_stocks)
+
+            for i, ticker in enumerate(selected_stocks):
+                arabic_name = stock_names.get(ticker, "")
+                status_text.markdown(f"**⏳ جاري الفحص:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
+
+                # سحب الداتا بناءً على الإعدادات
+                sector_name = stock_sectors.get(ticker, "غير محدد")
+                index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
+
+                res = analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
+                if res:
+                    results.append(res)
+
+                progress_bar.progress((i + 1) / total)
+
+            status_text.success(f"✅ تم الانتهاء من فحص {len(results)} سهم بنجاح!")
+
+        # 4. عرض النتائج في جدول منظم
+        if results:
+            res_df = pd.DataFrame(results)
+
+            # تطبيق الفلاتر
+            if filter_signal == "فرص الشراء فقط":
+                res_df = res_df[res_df["Score"] >= 1]
+            elif filter_signal == "الأسهم السلبية فقط":
+                res_df = res_df[res_df["Score"] < 0]
+
+            if not res_df.empty:
+                # ترتيب الأسهم حسب قوة الإشارة ثم بالاسم عشان الترتيب ميتغيرش عشوائياً
+                res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
+                res_df.reset_index(drop=True, inplace=True)
+
+                st.success(f"تم تحديث البيانات بنجاح! إجمالي الأسهم المعروضة: {len(res_df)}")
+                # عرض الجدول بشكل يناسب حجم الشاشة
+                st.dataframe(res_df, use_container_width=True)
             else:
-                st.markdown(f"<div style='border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;'><b>{fav_ticker.replace('.CA', '')}</b><br>⏳ جاري..</div>", unsafe_allow_html=True)
+                st.warning("لا توجد أسهم تطابق الفلاتر اللي اخترتها. جرب تختار 'عرض الكل'.")
+        else:
+            st.warning("تأكد من اختيار أسهم صحيحة أو اتصالك بالإنترنت.")
 
-st.markdown("---")
-st.subheader("💼 محفظتي الذكية (Smart Portfolio Tracker)")
-st.write("أضف الأسهم التي اشتريتها لمراقبة الربح/الخسارة والقيمة الإجمالية لمحفظتك، وتحديد أهداف الخروج ووقف الخسارة ديناميكياً.")
+with tabs[1]:
+    st.subheader("⭐ الأسهم المفضلة (متابعة حية)")
+    st.write("الأسهم اللي هتختارها هنا هتتحفظ في حسابك السحابي وهيتعملها تحليل فوري أول ما تفتح البرنامج.")
 
-portfolio_list = st.session_state["user_data"].get("portfolio", [])
 
-col_p1, col_p2, col_p3, col_p4 = st.columns([2, 1, 1, 1])
-with col_p1:
-    new_p_ticker = st.selectbox("اختر السهم للإضافة:", options=[""] + list(stock_names.keys()), format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}" if x else "اختر سهم...")
-with col_p2:
-    new_p_price = st.number_input("متوسط السعر:", min_value=0.0, format="%.3f")
-with col_p3:
-    new_p_qty = st.number_input("العدد (أسهم):", min_value=0, step=1)
-with col_p4:
-    st.write("")
-    st.write("")
-    if st.button("➕ إضافة للمحفظة", use_container_width=True):
-        if new_p_ticker and new_p_price > 0 and new_p_qty > 0:
-            exists = False
-            for p in portfolio_list:
-                if p["ticker"] == new_p_ticker:
-                    p["buy_price"] = new_p_price
-                    p["qty"] = new_p_qty
-                    exists = True
-            if not exists:
-                portfolio_list.append({"ticker": new_p_ticker, "buy_price": new_p_price, "qty": new_p_qty})
-            
-            st.session_state["user_data"]["portfolio"] = portfolio_list
-            try:
-                fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
-                st.rerun()
-            except Exception as e:
-                st.error(f"خطأ: {e}")
+    new_favorites = st.multiselect(
+        "إدارة قائمتي المفضلة:",
+        options=list(stock_names.keys()),
+        default=[x for x in favorites_list if x in stock_names.keys()],
+        format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}"
+    )
 
-if portfolio_list:
-    st.write("📊 **تفاصيل المحفظة:**")
-    total_portfolio_cost = 0.0
-    total_portfolio_value = 0.0
-    
-    for p in portfolio_list:
-        ticker = p["ticker"]
-        buy_price = float(p["buy_price"])
-        qty = int(p.get("qty", 1))  # Fallback for old data
-        
-        arabic_name = stock_names.get(ticker, "")
-        sector_name = stock_sectors.get(ticker, "غير محدد")
-        index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
-        
-        res_live = analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
-        if res_live:
-            current_price = res_live['السعر الحالي']
-            
-            stock_cost = buy_price * qty
-            stock_value = current_price * qty
-            pnl_money = stock_value - stock_cost
-            pnl_perc = ((current_price - buy_price) / buy_price) * 100
-            
-            total_portfolio_cost += stock_cost
-            total_portfolio_value += stock_value
-            
-            radar_sl = res_live['وقف الخسارة']
-            radar_tp = res_live['الهدف المتوقع']
-            
-            if radar_sl != "-" and radar_tp != "-":
-                sl_val = float(radar_sl)
-                tp_val = float(radar_tp)
-                if sl_val < buy_price:
-                    act_sl = sl_val
+    if new_favorites != favorites_list:
+        st.session_state["user_data"]["favorites"] = new_favorites
+        # Sync with Firebase
+        try:
+            fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
+        except Exception as e:
+            st.error(f"خطأ في الحفظ السحابي: {str(e)}")
+        favorites_list = new_favorites
+
+    if favorites_list:
+        st.write("📊 **إشارات المفضلة الآن:**")
+        cols = st.columns(min(len(favorites_list), 4) if len(favorites_list) > 0 else 1)
+
+        for i, fav_ticker in enumerate(favorites_list):
+            with cols[i % 4]:
+                arabic_name = stock_names.get(fav_ticker, "")
+                sector_name = stock_sectors.get(fav_ticker, "غير محدد")
+                index_name = "EGX30" if fav_ticker in egx30_list else ("EGX70" if fav_ticker in egx70_list else "-")
+
+                res = analyze_stock_cached(fav_ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
+                if res:
+                    signal = res['التوجيه الحالي'].split(' ')[0] # just the emoji
+                    st.markdown(f"<div style='border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;'><b>{fav_ticker.replace('.CA', '')}</b><br>{signal} {res['السعر الحالي']}<br><span style='font-size:12px;color:#666;'>دخول: {res['الدخول المقترح']} | هدف: {res['الهدف المتوقع']}<br>وقف: {res['وقف الخسارة']}</span></div>", unsafe_allow_html=True)
                 else:
-                    act_sl = buy_price * 0.95
-            else:
-                act_sl = buy_price * 0.95
-                tp_val = buy_price * 1.05
-            
-            if current_price <= act_sl:
-                action = "🛑 فعل وقف الخسارة!"
-                card_color = "rgba(255, 235, 238, 0.5)"
-            elif current_price >= tp_val:
-                action = "🎯 جني أرباح!"
-                card_color = "rgba(232, 245, 233, 0.5)"
-            else:
-                if pnl_perc > 0:
-                    action = "🛡️ احتفاظ (ربح)"
-                    card_color = "rgba(240, 253, 244, 0.5)"
-                else:
-                    action = "⏳ احتفاظ (انتظار)"
-                    card_color = "rgba(255, 251, 235, 0.5)"
-            
-            pnl_perc_str = f"+{pnl_perc:.1f}%" if pnl_perc > 0 else f"{pnl_perc:.1f}%"
-            pnl_money_str = f"+{pnl_money:.2f} EGP" if pnl_money > 0 else f"{pnl_money:.2f} EGP"
-            pnl_color = "#28a745" if pnl_perc > 0 else "#dc3545"
-            
-            st.markdown(f"""
-            <div style='background:{card_color}; border:1px solid #ddd; padding:15px; border-radius:10px; margin-bottom:10px;'>
-                <div style='display:flex; justify-content:space-between; align-items:center;'>
-                    <div>
-                        <h4 style='margin:0;color:#1e3c72;'>{ticker.replace('.CA', '')} {arabic_name}</h4>
-                        <span style='font-size:14px;color:#555;'>متوسط السعر: {buy_price} | الكمية: {qty} سهم | الإجمالي: {stock_cost:,.0f} ج</span><br>
-                        <span style='font-size:14px;color:#111;'>السعر الحالي: <b>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
-                    </div>
-                    <div style='text-align:right;'>
-                        <h3 style='margin:0;color:{pnl_color};'>{pnl_money_str}</h3>
-                        <h4 style='margin:0;color:{pnl_color};'>{pnl_perc_str}</h4>
-                        <span style='font-size:14px;font-weight:bold;'>{action}</span>
-                    </div>
-                </div>
-                <hr style='margin:8px 0;'/>
-                <div style='font-size:13px; color:#666; display:flex; justify-content:space-between;'>
-                    <span>🎯 الهدف المقترح: {tp_val:.2f}</span>
-                    <span>🛑 وقف الخسارة: {act_sl:.2f}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button(f"❌ حذف من المحفظة", key=f"del_{ticker}"):
-                st.session_state["user_data"]["portfolio"] = [x for x in portfolio_list if x["ticker"] != ticker]
+                    st.markdown(f"<div style='border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;'><b>{fav_ticker.replace('.CA', '')}</b><br>⏳ جاري..</div>", unsafe_allow_html=True)
+
+
+with tabs[2]:
+    st.subheader("💼 محفظتي الذكية (Smart Portfolio Tracker)")
+    st.write("أضف الأسهم التي اشتريتها لمراقبة الربح/الخسارة والقيمة الإجمالية لمحفظتك، وتحديد أهداف الخروج ووقف الخسارة ديناميكياً.")
+
+
+    col_p1, col_p2, col_p3, col_p4 = st.columns([2, 1, 1, 1])
+    with col_p1:
+        new_p_ticker = st.selectbox("اختر السهم للإضافة:", options=[""] + list(stock_names.keys()), format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}" if x else "اختر سهم...")
+    with col_p2:
+        new_p_price = st.number_input("متوسط السعر:", min_value=0.0, format="%.3f")
+    with col_p3:
+        new_p_qty = st.number_input("العدد (أسهم):", min_value=0, step=1)
+    with col_p4:
+        st.write("")
+        st.write("")
+        if st.button("➕ إضافة للمحفظة", use_container_width=True):
+            if new_p_ticker and new_p_price > 0 and new_p_qty > 0:
+                exists = False
+                for p in portfolio_list:
+                    if p["ticker"] == new_p_ticker:
+                        p["buy_price"] = new_p_price
+                        p["qty"] = new_p_qty
+                        exists = True
+                if not exists:
+                    portfolio_list.append({"ticker": new_p_ticker, "buy_price": new_p_price, "qty": new_p_qty})
+
+                st.session_state["user_data"]["portfolio"] = portfolio_list
                 try:
                     fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
                     st.rerun()
                 except Exception as e:
                     st.error(f"خطأ: {e}")
 
-    if total_portfolio_cost > 0:
-        tot_pnl = total_portfolio_value - total_portfolio_cost
-        tot_perc = (tot_pnl / total_portfolio_cost) * 100
-        t_color = "#28a745" if tot_pnl > 0 else "#dc3545"
-        st.markdown(f"""
-        <div style='background:#f8f9fa; border:2px solid #ccc; padding:15px; border-radius:10px; text-align:center;'>
-            <h3 style='margin:0;'>إجمالي المحفظة: <span style='color:#0056b3;'>{total_portfolio_value:,.0f} ج.م</span></h3>
-            <h4 style='color:{t_color}; margin:5px 0 0 0;'>الأرباح/الخسائر: {tot_pnl:,.0f} ج.م ({tot_perc:,.1f}%)</h4>
-        </div>
-        """, unsafe_allow_html=True)
+    if portfolio_list:
+        st.write("📊 **تفاصيل المحفظة:**")
+        total_portfolio_cost = 0.0
+        total_portfolio_value = 0.0
 
-st.markdown("---")
+        for p in portfolio_list:
+            ticker = p["ticker"]
+            buy_price = float(p["buy_price"])
+            qty = int(p.get("qty", 1))  # Fallback for old data
 
-specific_search_stocks = st.multiselect(
-    "ابحث باسم السهم (عربي) أو الكود (إنجليزي):",
-    options=list(stock_names.keys()),
-    default=[],
-    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}"
-)
-
-st.subheader("📋 طريقة اختيار الأسهم للمراقبة")
-selection_method = st.radio(
-    "هل ترغب في فحص مجموعات أو مؤشرات؟",
-    ["تحديد يدوي (حسب المؤشرات)", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)", "فحص قائمتي المفضلة", "لا أريد (سأكتفي بأسهم السيرش فقط)"],
-    horizontal=True
-)
-
-# نبدأ القائمة بالأسهم اللي اختارها في السيرش المخصص
-selected_stocks = list(specific_search_stocks)
-
-if selection_method == "تحديد يدوي (حسب المؤشرات)":
-    st.write("💡 ملحوظة: الفحص بياخد حوالي ثانية لكل سهم، اختر أسهمك بعناية.")
-    cols = st.columns(3)
-    with cols[0]:
-        with st.expander("مؤشر EGX 30", expanded=True):
-            selected_egx30 = st.multiselect(
-                "اختر أسهم EGX30:",
-                options=egx30_list,
-                default=[],
-                format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
-            )
-            selected_stocks.extend(selected_egx30)
-    with cols[1]:
-        with st.expander("مؤشر EGX 70", expanded=True):
-            selected_egx70 = st.multiselect(
-                "اختر أسهم EGX70:",
-                options=egx70_list,
-                default=[],
-                format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
-            )
-            selected_stocks.extend(selected_egx70)
-    with cols[2]:
-        with st.expander("مؤشر EGX 100", expanded=True):
-            selected_egx100 = st.multiselect(
-                "اختر أسهم EGX100:",
-                options=egx100_list,
-                default=[],
-                format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
-            )
-            selected_stocks.extend(selected_egx100)
-elif selection_method == "فحص قائمتي المفضلة":
-    selected_stocks.extend(favorites_list)
-elif selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
-    pass
-else:
-    if "EGX30" in selection_method:
-        selected_stocks.extend(egx30_list)
-    elif "EGX70" in selection_method:
-        selected_stocks.extend(egx70_list)
-    elif "البورصة بالكامل" in selection_method:
-        selected_stocks.extend(egx100_list)
-    
-    st.info(f"تم تحديد {len(selected_stocks)} سهم للفحص التلقائي. (قد يستغرق الفحص دقيقة أو أكثر)")
-
-# منع تكرار الأسهم في حالة اختيار نفس السهم من السيرش ومن القطاع
-selected_stocks = list(dict.fromkeys(selected_stocks))
-
-# فلاتر العرض السريعة
-st.subheader("🔎 فلاتر العرض السريعة")
-filter_signal = st.selectbox("تصفية حسب الإشارة:", ["عرض الكل", "فرص الشراء فقط", "الأسهم السلبية فقط"])
-
-# 4. زرار تشغيل الفحص
-if st.button("🔄 فحص السوق وتحديث التوجيهات"):
-    if not selected_stocks:
-        st.warning("برجاء اختيار أسهم للفحص أولاً!")
-    else:
-        results = []
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        total = len(selected_stocks)
-        
-        for i, ticker in enumerate(selected_stocks):
             arabic_name = stock_names.get(ticker, "")
-            status_text.markdown(f"**⏳ جاري الفحص:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
-            
-            # سحب الداتا بناءً على الإعدادات
             sector_name = stock_sectors.get(ticker, "غير محدد")
             index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
-            
-            res = analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
-            if res:
-                results.append(res)
-                
-            progress_bar.progress((i + 1) / total)
-            
-        status_text.success(f"✅ تم الانتهاء من فحص {len(results)} سهم بنجاح!")
-            
-    # 4. عرض النتائج في جدول منظم
-    if results:
-        res_df = pd.DataFrame(results)
-        
-        # تطبيق الفلاتر
-        if filter_signal == "فرص الشراء فقط":
-            res_df = res_df[res_df["Score"] >= 1]
-        elif filter_signal == "الأسهم السلبية فقط":
-            res_df = res_df[res_df["Score"] < 0]
-            
-        if not res_df.empty:
-            # ترتيب الأسهم حسب قوة الإشارة ثم بالاسم عشان الترتيب ميتغيرش عشوائياً
-            res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
-            res_df.reset_index(drop=True, inplace=True)
-            
-            st.success(f"تم تحديث البيانات بنجاح! إجمالي الأسهم المعروضة: {len(res_df)}")
-            # عرض الجدول بشكل يناسب حجم الشاشة
-            st.dataframe(res_df, use_container_width=True)
-        else:
-            st.warning("لا توجد أسهم تطابق الفلاتر اللي اخترتها. جرب تختار 'عرض الكل'.")
-    else:
-        st.warning("تأكد من اختيار أسهم صحيحة أو اتصالك بالإنترنت.")
+
+            res_live = analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
+            if res_live:
+                current_price = res_live['السعر الحالي']
+
+                stock_cost = buy_price * qty
+                stock_value = current_price * qty
+                pnl_money = stock_value - stock_cost
+                pnl_perc = ((current_price - buy_price) / buy_price) * 100
+
+                total_portfolio_cost += stock_cost
+                total_portfolio_value += stock_value
+
+                radar_sl = res_live['وقف الخسارة']
+                radar_tp = res_live['الهدف المتوقع']
+
+                if radar_sl != "-" and radar_tp != "-":
+                    sl_val = float(radar_sl)
+                    tp_val = float(radar_tp)
+                    if sl_val < buy_price:
+                        act_sl = sl_val
+                    else:
+                        act_sl = buy_price * 0.95
+                else:
+                    act_sl = buy_price * 0.95
+                    tp_val = buy_price * 1.05
+
+                if current_price <= act_sl:
+                    action = "🛑 فعل وقف الخسارة!"
+                    card_color = "rgba(255, 235, 238, 0.5)"
+                elif current_price >= tp_val:
+                    action = "🎯 جني أرباح!"
+                    card_color = "rgba(232, 245, 233, 0.5)"
+                else:
+                    if pnl_perc > 0:
+                        action = "🛡️ احتفاظ (ربح)"
+                        card_color = "rgba(240, 253, 244, 0.5)"
+                    else:
+                        action = "⏳ احتفاظ (انتظار)"
+                        card_color = "rgba(255, 251, 235, 0.5)"
+
+                pnl_perc_str = f"+{pnl_perc:.1f}%" if pnl_perc > 0 else f"{pnl_perc:.1f}%"
+                pnl_money_str = f"+{pnl_money:.2f} EGP" if pnl_money > 0 else f"{pnl_money:.2f} EGP"
+                pnl_color = "#28a745" if pnl_perc > 0 else "#dc3545"
+
+                st.markdown(f"""
+                <div style='background:{card_color}; border:1px solid #ddd; padding:15px; border-radius:10px; margin-bottom:10px;'>
+                    <div style='display:flex; justify-content:space-between; align-items:center;'>
+                        <div>
+                            <h4 style='margin:0;color:#1e3c72;'>{ticker.replace('.CA', '')} {arabic_name}</h4>
+                            <span style='font-size:14px;color:#555;'>متوسط السعر: {buy_price} | الكمية: {qty} سهم | الإجمالي: {stock_cost:,.0f} ج</span><br>
+                            <span style='font-size:14px;color:#111;'>السعر الحالي: <b>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
+                        </div>
+                        <div style='text-align:right;'>
+                            <h3 style='margin:0;color:{pnl_color};'>{pnl_money_str}</h3>
+                            <h4 style='margin:0;color:{pnl_color};'>{pnl_perc_str}</h4>
+                            <span style='font-size:14px;font-weight:bold;'>{action}</span>
+                        </div>
+                    </div>
+                    <hr style='margin:8px 0;'/>
+                    <div style='font-size:13px; color:#666; display:flex; justify-content:space-between;'>
+                        <span>🎯 الهدف المقترح: {tp_val:.2f}</span>
+                        <span>🛑 وقف الخسارة: {act_sl:.2f}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                if st.button(f"❌ حذف من المحفظة", key=f"del_{ticker}"):
+                    st.session_state["user_data"]["portfolio"] = [x for x in portfolio_list if x["ticker"] != ticker]
+                    try:
+                        fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"خطأ: {e}")
+
+        if total_portfolio_cost > 0:
+            tot_pnl = total_portfolio_value - total_portfolio_cost
+            tot_perc = (tot_pnl / total_portfolio_cost) * 100
+            t_color = "#28a745" if tot_pnl > 0 else "#dc3545"
+            st.markdown(f"""
+            <div style='background:#f8f9fa; border:2px solid #ccc; padding:15px; border-radius:10px; text-align:center;'>
+                <h3 style='margin:0;'>إجمالي المحفظة: <span style='color:#0056b3;'>{total_portfolio_value:,.0f} ج.م</span></h3>
+                <h4 style='color:{t_color}; margin:5px 0 0 0;'>الأرباح/الخسائر: {tot_pnl:,.0f} ج.م ({tot_perc:,.1f}%)</h4>
+            </div>
+            """, unsafe_allow_html=True)
+
