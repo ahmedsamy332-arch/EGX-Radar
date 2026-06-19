@@ -260,14 +260,15 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
-# عنوان الموقع والإمضاء
+# عنوان الموقع والإمضاء بحجم مدمج لتوفير المساحة
 st.markdown("""
-<div style='text-align: center; margin-bottom: 20px;'>
-    <h1 style='margin: 0; padding: 0; color: #1e3c72;'>🦅 نسر البورصة المصرية</h1>
-    <span style='font-size: 11px; color: #888; font-family: monospace; position: relative; top: -10px;'>
-        Developed by <span style='color: #0056b3; font-weight: bold;'>AHMED SAMY</span>
+<div style='display: flex; justify-content: space-between; align-items: center; margin-top: -40px; margin-bottom: 5px;'>
+    <h3 style='margin: 0; padding: 0; color: #1e3c72; font-size: 22px; font-weight: 900;'>🦅 نسر البورصة</h3>
+    <span style='font-size: 10px; color: #888; font-family: monospace;'>
+        By <b style='color: #0056b3;'>AHMED SAMY</b>
     </span>
 </div>
+<hr style='margin: 0px 0px 15px 0px; border-color: #eee;'/>
 """, unsafe_allow_html=True)
 import extra_streamlit_components as stx
 cookie_manager = stx.CookieManager(key="cookie_manager")
