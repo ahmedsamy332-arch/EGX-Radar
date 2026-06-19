@@ -259,7 +259,15 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
-# (تم نقل العنوان إلى القائمة الجانبية لتوفير المساحة)
+# عنوان الموقع والإمضاء بتصميم أنيق ومدمج
+st.markdown("""
+<div style="text-align: center; margin-top: -30px; margin-bottom: 15px;">
+    <h3 style="margin: 0; padding: 0; color: #1e3c72; font-weight: 900; font-size: 22px; display: inline-block;">🦅 نسر البورصة</h3>
+    <span style="font-size: 11px; color: #666; margin-right: 15px; border-right: 2px solid #ddd; padding-right: 15px; position: relative; top: -3px;">
+        Developed by <strong style="color: #0056b3;">AHMED SAMY</strong>
+    </span>
+</div>
+""", unsafe_allow_html=True)
 import extra_streamlit_components as stx
 cookie_manager = stx.CookieManager(key="cookie_manager")
 
@@ -343,16 +351,6 @@ if st.session_state["user"] is None:
 
 # القائمة الجانبية
 with st.sidebar:
-    st.markdown("""
-    <div style='text-align: center; margin-bottom: 10px;'>
-        <h2 style='margin: 0; padding: 0; color: #1e3c72; font-weight: 900;'>🦅 نسر البورصة</h2>
-        <span style='font-size: 11px; color: #888; font-family: monospace;'>
-            By <b style='color: #0056b3;'>AHMED SAMY</b>
-        </span>
-    </div>
-    <hr style='margin: 5px 0px 15px 0px; border-color: #eee;'/>
-    """, unsafe_allow_html=True)
-    
     st.write(f"👤 {st.session_state['user'].get('email', '')}")
     if st.button("تسجيل الخروج"):
         st.session_state["token_to_delete"] = True
