@@ -524,54 +524,29 @@ tabs = st.tabs(['📊 رادار السوق', '⭐ المفضلة', '💼 محف
 
 with tabs[0]:
 
+    def format_stock_option(ticker):
+        name = stock_names.get(ticker, "")
+        idx = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "EGX100")
+        return f"{ticker.replace('.CA', '')} - {name} ({idx})"
+
     specific_search_stocks = st.multiselect(
         "ابحث باسم السهم (عربي) أو الكود (إنجليزي):",
         options=list(stock_names.keys()),
         default=[],
-        format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}"
+        format_func=format_stock_option
     )
 
     st.subheader("📋 طريقة اختيار الأسهم للمراقبة")
     selection_method = st.radio(
         "هل ترغب في فحص مجموعات أو مؤشرات؟",
-        ["تحديد يدوي (حسب المؤشرات)", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)", "فحص قائمتي المفضلة", "لا أريد (سأكتفي بأسهم السيرش فقط)"],
+        ["لا أريد (سأكتفي بأسهم السيرش فقط)", "فحص قائمتي المفضلة", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)"],
         horizontal=True
     )
 
     # نبدأ القائمة بالأسهم اللي اختارها في السيرش المخصص
     selected_stocks = list(specific_search_stocks)
 
-    if selection_method == "تحديد يدوي (حسب المؤشرات)":
-        st.write("💡 ملحوظة: الفحص بياخد حوالي ثانية لكل سهم، اختر أسهمك بعناية.")
-        cols = st.columns(3)
-        with cols[0]:
-            with st.expander("مؤشر EGX 30", expanded=True):
-                selected_egx30 = st.multiselect(
-                    "اختر أسهم EGX30:",
-                    options=egx30_list,
-                    default=[],
-                    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
-                )
-                selected_stocks.extend(selected_egx30)
-        with cols[1]:
-            with st.expander("مؤشر EGX 70", expanded=True):
-                selected_egx70 = st.multiselect(
-                    "اختر أسهم EGX70:",
-                    options=egx70_list,
-                    default=[],
-                    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
-                )
-                selected_stocks.extend(selected_egx70)
-        with cols[2]:
-            with st.expander("مؤشر EGX 100", expanded=True):
-                selected_egx100 = st.multiselect(
-                    "اختر أسهم EGX100:",
-                    options=egx100_list,
-                    default=[],
-                    format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
-                )
-                selected_stocks.extend(selected_egx100)
-    elif selection_method == "فحص قائمتي المفضلة":
+    if selection_method == "فحص قائمتي المفضلة":
         selected_stocks.extend(favorites_list)
     elif selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
         pass
