@@ -268,6 +268,14 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
+# مفتاح الوضع المظلم / الفاتح
+is_light = st.query_params.get("theme", "dark") == "light"
+theme_switch = st.toggle("☀️ وضع نهاري", value=is_light)
+if theme_switch and not is_light:
+    streamlit_js_eval(js_expressions="window.parent.location.search = '?theme=light'")
+elif not theme_switch and is_light:
+    streamlit_js_eval(js_expressions="window.parent.location.search = '?theme=dark'")
+
 # عنوان الموقع
 st.markdown("<h1 style='text-align: center;'>🦅 نسر البورصة المصرية</h1>", unsafe_allow_html=True)
 
