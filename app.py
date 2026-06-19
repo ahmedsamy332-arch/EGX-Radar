@@ -237,12 +237,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 import extra_streamlit_components as stx
-
-@st.cache_resource
-def get_cookie_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_cookie_manager()
+cookie_manager = stx.CookieManager(key="cookie_manager")
 
 # معالجة حفظ أو مسح الكوكيز من الجلسة السابقة قبل أي شيء آخر
 if "token_to_save" in st.session_state:
