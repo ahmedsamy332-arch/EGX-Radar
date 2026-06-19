@@ -3,6 +3,7 @@ import yfinance as yf
 import pandas as pd
 
 import firebase_client as fb
+import extra_streamlit_components as stx
 
 def calculate_rsi(data, window=7):
     delta = data.diff()
@@ -236,11 +237,29 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Cookie Manager للحفظ التلقائي لجلسة الدخول
+cookie_manager = stx.CookieManager()
+
 # Session State Variables
 if "user" not in st.session_state:
     st.session_state["user"] = None
 if "user_data" not in st.session_state:
     st.session_state["user_data"] = {"favorites": [], "portfolio": []}
+if "auto_login_tried" not in st.session_state:
+    st.session_state["auto_login_tried"] = False
+
+# محاولة تسجيل الدخول التلقائي من الكوكيز
+if st.session_state["user"] is None and not st.session_state["auto_login_tried"]:
+    st.session_state["auto_login_tried"] = True
+    saved_token = cookie_manager.get("egx_refresh_token")
+    if saved_token:
+        try:
+            user = fb.refresh_id_token(saved_token)
+            st.session_state["user"] = user
+            st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
+            st.rerun()
+        except:
+            cookie_manager.delete("egx_refresh_token")
 
 # شاشة تسجيل الدخول / إنشاء حساب
 if st.session_state["user"] is None:
@@ -258,10 +277,11 @@ if st.session_state["user"] is None:
                 if email and password:
                     with st.spinner("جاري تسجيل الدخول..."):
                         try:
-                            import firebase_client as fb
                             user = fb.sign_in(email, password)
                             st.session_state["user"] = user
                             st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
+                            # حفظ جلسة الدخول في الكوكيز (30 يوم)
+                            cookie_manager.set("egx_refresh_token", user.get("refreshToken", ""), max_age=30*24*60*60)
                             st.rerun()
                         except Exception as e:
                             st.error(f"خطأ في الدخول: {str(e)}")
@@ -276,11 +296,12 @@ if st.session_state["user"] is None:
                     else:
                         with st.spinner("جاري إنشاء الحساب..."):
                             try:
-                                import firebase_client as fb
                                 user = fb.sign_up(email, password)
                                 st.session_state["user"] = user
                                 st.session_state["user_data"] = {"favorites": [], "portfolio": []}
                                 fb.update_user_data(user["localId"], user["idToken"], st.session_state["user_data"])
+                                # حفظ جلسة الدخول في الكوكيز (30 يوم)
+                                cookie_manager.set("egx_refresh_token", user.get("refreshToken", ""), max_age=30*24*60*60)
                                 st.success("تم إنشاء الحساب بنجاح! جاري الدخول...")
                                 st.rerun()
                             except Exception as e:
@@ -292,11 +313,14 @@ if st.session_state["user"] is None:
 
 # زر تسجيل الخروج
 with st.sidebar:
-    st.write(f"👤 {st.session_state['user']['email']}")
+    st.write(f"👤 {st.session_state['user'].get('email', '')}")
     if st.button("تسجيل الخروج"):
+        cookie_manager.delete("egx_refresh_token")
         st.session_state["user"] = None
         st.session_state["user_data"] = {"favorites": [], "portfolio": []}
+        st.session_state["auto_login_tried"] = False
         st.rerun()
+
 
 # 2. قائمة الأسهم الافتراضية (مقسمة لقطاعات تغطي مؤشرات السوق EGX30, EGX70, EGX100)
 

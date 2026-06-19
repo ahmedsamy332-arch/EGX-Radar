@@ -101,3 +101,22 @@ def update_user_data(uid, token, data_dict):
     if "error" in response_data:
         raise Exception(response_data["error"]["message"])
     return True
+
+def refresh_id_token(refresh_token):
+    """Use a refresh token to get a new idToken (tokens expire every hour)."""
+    url = f"https://securetoken.googleapis.com/v1/token?key={API_KEY}"
+    payload = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token
+    }
+    r = requests.post(url, json=payload)
+    data = r.json()
+    if "error" in data:
+        raise Exception(data["error"].get("message", "Token refresh failed"))
+    return {
+        "idToken": data["id_token"],
+        "refreshToken": data["refresh_token"],
+        "localId": data["user_id"],
+        "email": data.get("email", "")
+    }
+
