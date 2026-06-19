@@ -247,15 +247,20 @@ if "user_data" not in st.session_state:
 if st.session_state["user"] is None:
     saved_token = streamlit_js_eval(js_expressions="localStorage.getItem('egx_refresh_token')", key="get_token")
     
-    if saved_token and saved_token != "null" and saved_token != "":
+    # streamlit_js_eval returns 0 (int) while JS is still loading
+    if saved_token == 0:
+        st.info("⏳ جاري تحميل الجلسة...")
+        st.stop()
+    
+    if saved_token and isinstance(saved_token, str) and saved_token != "null":
         try:
             user = fb.refresh_id_token(saved_token)
             st.session_state["user"] = user
             st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
             st.rerun()
         except:
-            # التوكين منتهي أو غير صالح، نمسحه
             streamlit_js_eval(js_expressions="localStorage.removeItem('egx_refresh_token')", key="clear_bad_token")
+
 
 # شاشة تسجيل الدخول / إنشاء حساب
 if st.session_state["user"] is None:
