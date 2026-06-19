@@ -3,7 +3,6 @@ import yfinance as yf
 import pandas as pd
 
 import firebase_client as fb
-from streamlit_js_eval import streamlit_js_eval
 
 def calculate_rsi(data, window=7):
     delta = data.diff()
