@@ -3,3 +3,4 @@ yfinance
 pandas
 requests
 extra-streamlit-components
+git+https://github.com/rongardF/tvdatafeed.git

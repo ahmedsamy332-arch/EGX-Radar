@@ -1,8 +1,17 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+from tvDatafeed import TvDatafeed, Interval
 
 import firebase_client as fb
+
+@st.cache_resource
+def get_tv():
+    try:
+        return TvDatafeed()
+    except Exception as e:
+        print("tvDatafeed init error:", e)
+        return None
 
 def calculate_rsi(data, window=7):
     delta = data.diff()
@@ -59,8 +68,26 @@ def calculate_vwap(high, low, close, volume, window=14):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name):
-    # auto_adjust=True مهم جداً في السوق المصري عشان تعديل الأسعار بناءً على تجزئة الأسهم وتوزيعات الأرباح
-    df = yf.download(ticker, period=yf_period, interval=yf_interval, progress=False, auto_adjust=True)
+    df = pd.DataFrame()
+    tv = get_tv()
+    
+    # 1. المحاولة الأولى باستخدام TradingView (أدق للسوق المصري)
+    if tv is not None:
+        try:
+            tv_interval_map = {"15m": Interval.in_15_minute, "1h": Interval.in_1_hour, "1d": Interval.in_daily}
+            tv_interval_val = tv_interval_map.get(yf_interval, Interval.in_daily)
+            tv_ticker = ticker.replace('.CA', '')
+            df_tv = tv.get_hist(symbol=tv_ticker, exchange='EGX', interval=tv_interval_val, n_bars=600)
+            if df_tv is not None and not df_tv.empty:
+                df_tv.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
+                df = df_tv
+        except Exception as e:
+            print(f"TV fetch error for {ticker}: {e}")
+            
+    # 2. المصدر الاحتياطي (Fallback) من Yahoo Finance
+    if df.empty:
+        df = yf.download(ticker, period=yf_period, interval=yf_interval, progress=False, auto_adjust=True)
+        
     if df.empty:
         return None
         
