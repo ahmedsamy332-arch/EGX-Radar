@@ -236,6 +236,22 @@ st.markdown("""
     <span style='font-size: 11px; color: #999; font-family: monospace;'>© 2026 All Rights Reserved</span>
 </div>
 """, unsafe_allow_html=True)
+import extra_streamlit_components as stx
+
+@st.cache_resource(experimental_allow_widgets=True)
+def get_cookie_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_cookie_manager()
+
+# معالجة حفظ أو مسح الكوكيز من الجلسة السابقة قبل أي شيء آخر
+if "token_to_save" in st.session_state:
+    cookie_manager.set("egx_refresh_token", st.session_state["token_to_save"], max_age=30*24*60*60)
+    del st.session_state["token_to_save"]
+
+if "token_to_delete" in st.session_state:
+    cookie_manager.delete("egx_refresh_token")
+    del st.session_state["token_to_delete"]
 
 # Session State Variables
 if "user" not in st.session_state:
@@ -243,24 +259,18 @@ if "user" not in st.session_state:
 if "user_data" not in st.session_state:
     st.session_state["user_data"] = {"favorites": [], "portfolio": []}
 
-# محاولة تسجيل الدخول التلقائي من localStorage
-if st.session_state["user"] is None:
-    saved_token = streamlit_js_eval(js_expressions="localStorage.getItem('egx_refresh_token')", key="get_token")
-    
-    # streamlit_js_eval returns 0 (int) while JS is still loading
-    if saved_token == 0:
-        st.info("⏳ جاري تحميل الجلسة...")
-        st.stop()
-    
-    if saved_token and isinstance(saved_token, str) and saved_token != "null":
-        try:
-            user = fb.refresh_id_token(saved_token)
-            st.session_state["user"] = user
-            st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
-            st.rerun()
-        except:
-            streamlit_js_eval(js_expressions="localStorage.removeItem('egx_refresh_token')", key="clear_bad_token")
+# قراءة التوكن المحفوظ (بيكون متوفر دايماً بعد تحميل الصفحة)
+saved_token = cookie_manager.get("egx_refresh_token")
 
+# محاولة تسجيل الدخول التلقائي من الكوكيز
+if st.session_state["user"] is None and saved_token and isinstance(saved_token, str):
+    try:
+        user = fb.refresh_id_token(saved_token)
+        st.session_state["user"] = user
+        st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
+        st.rerun()
+    except:
+        pass # التوكن غير صالح أو منتهي
 
 # شاشة تسجيل الدخول / إنشاء حساب
 if st.session_state["user"] is None:
@@ -281,8 +291,8 @@ if st.session_state["user"] is None:
                             user = fb.sign_in(email, password)
                             st.session_state["user"] = user
                             st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
-                            # حفظ جلسة الدخول في المتصفح
-                            streamlit_js_eval(js_expressions=f"localStorage.setItem('egx_refresh_token', '{user.get('refreshToken', '')}')", key="save_token_login")
+                            # نطلب من المتصفح يحفظ التوكن في اللفة الجاية
+                            st.session_state["token_to_save"] = user.get("refreshToken", "")
                             st.rerun()
                         except Exception as e:
                             st.error(f"خطأ في الدخول: {str(e)}")
@@ -301,8 +311,8 @@ if st.session_state["user"] is None:
                                 st.session_state["user"] = user
                                 st.session_state["user_data"] = {"favorites": [], "portfolio": []}
                                 fb.update_user_data(user["localId"], user["idToken"], st.session_state["user_data"])
-                                # حفظ جلسة الدخول في المتصفح
-                                streamlit_js_eval(js_expressions=f"localStorage.setItem('egx_refresh_token', '{user.get('refreshToken', '')}')", key="save_token_signup")
+                                # نطلب من المتصفح يحفظ التوكن في اللفة الجاية
+                                st.session_state["token_to_save"] = user.get("refreshToken", "")
                                 st.success("تم إنشاء الحساب بنجاح! جاري الدخول...")
                                 st.rerun()
                             except Exception as e:
@@ -316,10 +326,11 @@ if st.session_state["user"] is None:
 with st.sidebar:
     st.write(f"👤 {st.session_state['user'].get('email', '')}")
     if st.button("تسجيل الخروج"):
-        streamlit_js_eval(js_expressions="localStorage.removeItem('egx_refresh_token')", key="clear_token_logout")
+        st.session_state["token_to_delete"] = True
         st.session_state["user"] = None
         st.session_state["user_data"] = {"favorites": [], "portfolio": []}
         st.rerun()
+
 
 
 # 2. قائمة الأسهم الافتراضية (مقسمة لقطاعات تغطي مؤشرات السوق EGX30, EGX70, EGX100)
