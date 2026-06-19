@@ -214,7 +214,7 @@ st.set_page_config(page_title="نسر البورصة المصرية", layout="ce
 st.markdown("""
 <style>
 /* إخفاء زر النشر في الشريط العلوي فقط */
-.stAppDeployButton, [data-testid="stToolbar"] {
+.stAppDeployButton, [data-testid="stAppDeployButton"] {
     display: none !important;
 }
 footer {visibility: hidden;}
