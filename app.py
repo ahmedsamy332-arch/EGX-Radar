@@ -213,12 +213,10 @@ st.set_page_config(page_title="نسر البورصة المصرية", layout="ce
 # CSS مخصص لتحسين الخطوط والأنيميشن
 st.markdown("""
 <style>
-/* إخفاء أدوات Streamlit والعلامة المائية */
-.stAppDeployButton, [data-testid="stToolbar"], [data-testid="stAppDeployButton"], .viewerBadge_container, .viewerBadge_link {
+/* إخفاء أدوات Streamlit اللي بتظهر جوه التطبيق فقط */
+.stAppDeployButton, [data-testid="stAppDeployButton"] {
     display: none !important;
 }
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
 footer {visibility: hidden;}
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
 
@@ -271,14 +269,6 @@ h1 {
 }
 </style>
 """, unsafe_allow_html=True)
-
-# مفتاح الوضع المظلم / الفاتح
-is_light = st.query_params.get("theme", "dark") == "light"
-theme_switch = st.toggle("☀️ وضع نهاري", value=is_light)
-if theme_switch and not is_light:
-    streamlit_js_eval(js_expressions="window.parent.location.search = '?theme=light'")
-elif not theme_switch and is_light:
-    streamlit_js_eval(js_expressions="window.parent.location.search = '?theme=dark'")
 
 # عنوان الموقع
 st.markdown("<h1 style='text-align: center;'>🦅 نسر البورصة المصرية</h1>", unsafe_allow_html=True)
