@@ -259,13 +259,13 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
-# عنوان الموقع والإمضاء بتصميم أنيق ومدمج
+# عنوان الموقع والإمضاء بتصميم متناسق مع حجم الخطوط
 st.markdown("""
-<div style="text-align: center; margin-top: -30px; margin-bottom: 15px;">
-    <h3 style="margin: 0; padding: 0; color: #1e3c72; font-weight: 900; font-size: 22px; display: inline-block;">🦅 نسر البورصة</h3>
-    <span style="font-size: 11px; color: #666; margin-right: 15px; border-right: 2px solid #ddd; padding-right: 15px; position: relative; top: -3px;">
-        Developed by <strong style="color: #0056b3;">AHMED SAMY</strong>
-    </span>
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: -30px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #e6e6e6;">
+    <div style="font-size: 28px; font-weight: 900; color: #1e3c72; margin: 0; padding: 0;">🦅 نسر البورصة</div>
+    <div style="font-size: 14px; color: #666; font-weight: bold; font-family: sans-serif;">
+        <span style="font-weight: normal; color: #888;">By</span> <span style="color: #0056b3;">AHMED SAMY</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 import extra_streamlit_components as stx
