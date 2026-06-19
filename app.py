@@ -44,6 +44,20 @@ def calculate_obv_trend(close, volume, ema_window=10):
     obv_ema = obv.ewm(span=ema_window, adjust=False).mean()
     return obv, obv_ema
 
+def calculate_stoch_rsi(rsi_series, window=14, smooth_k=3, smooth_d=3):
+    rsi_min = rsi_series.rolling(window=window).min()
+    rsi_max = rsi_series.rolling(window=window).max()
+    stoch_rsi = (rsi_series - rsi_min) / (rsi_max - rsi_min)
+    stoch_rsi_k = stoch_rsi.rolling(window=smooth_k).mean() * 100
+    stoch_rsi_d = stoch_rsi_k.rolling(window=smooth_d).mean()
+    return stoch_rsi_k, stoch_rsi_d
+
+def calculate_vwap(high, low, close, volume, window=14):
+    typical_price = (high + low + close) / 3
+    tp_vol = typical_price * volume
+    vwap = tp_vol.rolling(window=window).sum() / volume.rolling(window=window).sum()
+    return vwap
+
 @st.cache_data(ttl=300, show_spinner=False)
 def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name):
     df = yf.download(ticker, period=yf_period, interval=yf_interval, progress=False)
@@ -62,6 +76,10 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     df['BB_Upper'], df['BB_Lower'] = calculate_bb(close_series)
     df['ATR'] = calculate_atr(high_series, low_series, close_series)
     df['OBV'], df['OBV_EMA'] = calculate_obv_trend(close_series, volume_series)
+    df['StochRSI_K'], df['StochRSI_D'] = calculate_stoch_rsi(df['RSI_14'])
+    df['VWAP_14'] = calculate_vwap(high_series, low_series, close_series, volume_series)
+    df['SMA_50'] = close_series.rolling(window=50).mean()
+    df['SMA_200'] = close_series.rolling(window=200).mean()
     
     last_close = float(close_series.iloc[-1])
     atr_val = float(df['ATR'].iloc[-1])
@@ -74,6 +92,11 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     bb_lower = float(df['BB_Lower'].iloc[-1])
     obv = float(df['OBV'].iloc[-1])
     obv_ema = float(df['OBV_EMA'].iloc[-1])
+    stoch_k = float(df['StochRSI_K'].iloc[-1]) if not pd.isna(df['StochRSI_K'].iloc[-1]) else None
+    stoch_d = float(df['StochRSI_D'].iloc[-1]) if not pd.isna(df['StochRSI_D'].iloc[-1]) else None
+    vwap_14 = float(df['VWAP_14'].iloc[-1]) if not pd.isna(df['VWAP_14'].iloc[-1]) else None
+    sma_50 = float(df['SMA_50'].iloc[-1]) if not pd.isna(df['SMA_50'].iloc[-1]) else None
+    sma_200 = float(df['SMA_200'].iloc[-1]) if not pd.isna(df['SMA_200'].iloc[-1]) else None
     
     volume_sma_10 = volume_series.rolling(window=10).mean()
     if len(volume_sma_10) > 0 and pd.notna(volume_sma_10.iloc[-1]):
@@ -108,16 +131,28 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     if obv > obv_ema: score += 1
     elif obv < obv_ema: score -= 1
     
+    if stoch_k is not None and stoch_d is not None:
+        if stoch_k > stoch_d and stoch_k < 80: score += 1
+        elif stoch_k < stoch_d and stoch_k > 20: score -= 1
+        
+    if vwap_14 is not None:
+        if last_close > vwap_14: score += 1
+        elif last_close < vwap_14: score -= 1
+        
+    if sma_50 is not None and sma_200 is not None:
+        if sma_50 > sma_200: score += 1
+        elif sma_50 < sma_200: score -= 1
+    
     if not is_valid_for_day_trading:
         score = -10
         signal = "🚫 لا يدعم T+0 (سيولة ضعيفة)"
-    elif score >= 2:
+    elif score >= 4:
         signal = "🟢 إشارة شراء قوية"
-    elif score == 1:
+    elif score >= 1:
         signal = "🟡 إيجابي / تجميع"
-    elif score == 0:
+    elif score >= -1:
         signal = "⚪ محايد / استقرار"
-    elif score == -1:
+    elif score >= -4:
         signal = "🟠 سلبي / جني أرباح جزئي"
     else:
         signal = "🔴 إشارة بيع قوية"
@@ -143,10 +178,10 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     ticker_display = f"{ticker.replace('.CA', '')} - {arabic_name}" if arabic_name else ticker.replace('.CA', '')
     
     if is_valid_for_day_trading:
-        # تحويل التقييم من [-5, 5] إلى نسبة مئوية [0%, 100%]
-        # حيث 5 تعني 100% (شراء قوي جداً) و -5 تعني 0% (بيع قوي جداً)
-        # و 0 تعني 50% (محايد)
-        perc = int(((score + 5) / 10) * 100)
+        # تحويل التقييم من [-8, 8] إلى نسبة مئوية [0%, 100%]
+        # حيث 8 تعني 100% (شراء قوي جداً) و -8 تعني 0% (بيع قوي جداً)
+        perc = int(((score + 8) / 16) * 100)
+        perc = max(0, min(100, perc)) # للحماية من أي قيمة غير متوقعة
         score_percent = f"{perc}%"
     else:
         score_percent = "غير صالح"
