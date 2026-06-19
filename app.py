@@ -677,7 +677,7 @@ selected_stocks = list(specific_search_stocks)
 
 if selection_method == "تحديد يدوي (حسب المؤشرات)":
     st.write("💡 ملحوظة: الفحص بياخد حوالي ثانية لكل سهم، اختر أسهمك بعناية.")
-    cols = st.columns(2)
+    cols = st.columns(3)
     with cols[0]:
         with st.expander("مؤشر EGX 30", expanded=True):
             selected_egx30 = st.multiselect(
@@ -696,6 +696,15 @@ if selection_method == "تحديد يدوي (حسب المؤشرات)":
                 format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
             )
             selected_stocks.extend(selected_egx70)
+    with cols[2]:
+        with st.expander("مؤشر EGX 100", expanded=True):
+            selected_egx100 = st.multiselect(
+                "اختر أسهم EGX100:",
+                options=egx100_list,
+                default=[],
+                format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names.get(x, '')}"
+            )
+            selected_stocks.extend(selected_egx100)
 elif selection_method == "فحص قائمتي المفضلة":
     selected_stocks.extend(favorites_list)
 elif selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
