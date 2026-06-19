@@ -720,9 +720,7 @@ else:
     st.info(f"تم تحديد {len(selected_stocks)} سهم للفحص التلقائي. (قد يستغرق الفحص دقيقة أو أكثر)")
 
 # منع تكرار الأسهم في حالة اختيار نفس السهم من السيرش ومن القطاع
-selected_stocks = list(set(selected_stocks))
-
-
+selected_stocks = list(dict.fromkeys(selected_stocks))
 
 # فلاتر العرض السريعة
 st.subheader("🔎 فلاتر العرض السريعة")
@@ -752,7 +750,7 @@ if st.button("🔄 فحص السوق وتحديث التوجيهات"):
                 
             progress_bar.progress((i + 1) / total)
             
-        status_text.success(f"✅ تم الانتهاء من فحص {total} سهم بنجاح!")
+        status_text.success(f"✅ تم الانتهاء من فحص {len(results)} سهم بنجاح!")
             
     # 4. عرض النتائج في جدول منظم
     if results:
@@ -765,8 +763,8 @@ if st.button("🔄 فحص السوق وتحديث التوجيهات"):
             res_df = res_df[res_df["Score"] < 0]
             
         if not res_df.empty:
-            # ترتيب الأسهم حسب قوة الإشارة (من الأقوى شراء إلى الأقوى بيع)
-            res_df = res_df.sort_values(by="Score", ascending=False).drop(columns=["Score"])
+            # ترتيب الأسهم حسب قوة الإشارة ثم بالاسم عشان الترتيب ميتغيرش عشوائياً
+            res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
             res_df.reset_index(drop=True, inplace=True)
             
             st.success(f"تم تحديث البيانات بنجاح! إجمالي الأسهم المعروضة: {len(res_df)}")
