@@ -47,7 +47,7 @@ def calculate_obv_trend(close, volume, ema_window=10):
 def calculate_stoch_rsi(rsi_series, window=14, smooth_k=3, smooth_d=3):
     rsi_min = rsi_series.rolling(window=window).min()
     rsi_max = rsi_series.rolling(window=window).max()
-    stoch_rsi = (rsi_series - rsi_min) / (rsi_max - rsi_min)
+    stoch_rsi = (rsi_series - rsi_min) / (rsi_max - rsi_min + 1e-10)
     stoch_rsi_k = stoch_rsi.rolling(window=smooth_k).mean() * 100
     stoch_rsi_d = stoch_rsi_k.rolling(window=smooth_d).mean()
     return stoch_rsi_k, stoch_rsi_d
@@ -60,9 +60,13 @@ def calculate_vwap(high, low, close, volume, window=14):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name):
-    df = yf.download(ticker, period=yf_period, interval=yf_interval, progress=False)
+    # auto_adjust=True مهم جداً في السوق المصري عشان تعديل الأسعار بناءً على تجزئة الأسهم وتوزيعات الأرباح
+    df = yf.download(ticker, period=yf_period, interval=yf_interval, progress=False, auto_adjust=True)
     if df.empty:
         return None
+        
+    # تنظيف البيانات من أي أيام إجازات أو بيانات ناقصة
+    df = df.ffill().dropna()
         
     close_series = df['Close'].squeeze()
     high_series = df['High'].squeeze()
