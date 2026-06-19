@@ -213,10 +213,12 @@ st.set_page_config(page_title="نسر البورصة المصرية", layout="ce
 # CSS مخصص لتحسين الخطوط والأنيميشن
 st.markdown("""
 <style>
-/* إخفاء أدوات Streamlit اللي بتظهر جوه التطبيق فقط */
-.stAppDeployButton, [data-testid="stAppDeployButton"] {
+/* إخفاء شريط أدوات Streamlit العلوي */
+.stAppDeployButton, [data-testid="stToolbar"] {
     display: none !important;
 }
+#MainMenu {visibility: hidden;}
+header {visibility: hidden;}
 footer {visibility: hidden;}
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
 
