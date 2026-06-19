@@ -249,16 +249,6 @@ h1 {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Copyright banner glow effect */
-.copyright-banner {
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0,0,0,0.05);
-}
-.copyright-banner:hover {
-    box-shadow: 0 0 15px rgba(0, 86, 179, 0.15);
-    transform: scale(1.01);
-}
-
 /* Fade in for the tables and elements */
 .stDataFrame {
     animation: fadeIn 0.8s ease-in-out;
@@ -270,17 +260,13 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
-# عنوان الموقع
-st.markdown("<h1 style='text-align: center;'>🦅 نسر البورصة المصرية</h1>", unsafe_allow_html=True)
-
-# حقوق الملكية (Copyright)
+# عنوان الموقع والإمضاء
 st.markdown("""
-<div class='copyright-banner' style='text-align: center; margin-top: -15px; margin-bottom: 20px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.03);'>
-    <span style='font-size: 13px; color: #666; font-family: monospace;'>DEVELOPED & ENGINEERED BY</span>
-    <br>
-    <span style='font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #0056b3; font-family: "Arial Black", sans-serif;'>AHMED SAMY</span>
-    <br>
-    <span style='font-size: 11px; color: #999; font-family: monospace;'>© 2026 All Rights Reserved</span>
+<div style='text-align: center; margin-bottom: 20px;'>
+    <h1 style='margin: 0; padding: 0; color: #1e3c72;'>🦅 نسر البورصة المصرية</h1>
+    <span style='font-size: 11px; color: #888; font-family: monospace; position: relative; top: -10px;'>
+        Developed by <span style='color: #0056b3; font-weight: bold;'>AHMED SAMY</span>
+    </span>
 </div>
 """, unsafe_allow_html=True)
 import extra_streamlit_components as stx
