@@ -142,6 +142,15 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         
     ticker_display = f"{ticker.replace('.CA', '')} - {arabic_name}" if arabic_name else ticker.replace('.CA', '')
     
+    if is_valid_for_day_trading:
+        # تحويل التقييم من [-5, 5] إلى نسبة مئوية [0%, 100%]
+        # حيث 5 تعني 100% (شراء قوي جداً) و -5 تعني 0% (بيع قوي جداً)
+        # و 0 تعني 50% (محايد)
+        perc = int(((score + 5) / 10) * 100)
+        score_percent = f"{perc}%"
+    else:
+        score_percent = "غير صالح"
+
     return {
         "المؤشر": index_name,
         "القطاع": sector_name,
@@ -153,7 +162,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         "وقف الخسارة": sl_str,
         "السيولة": vol_status,
         "الزخم (RSI)": round(rsi_14, 1),
-        "قوة التقييم": score if is_valid_for_day_trading else "غير صالح",
+        "قوة التقييم": score_percent,
         "التوجيه الحالي": signal,
         "Score": score
     }
