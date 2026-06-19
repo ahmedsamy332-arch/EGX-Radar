@@ -80,6 +80,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
             df_tv = tv.get_hist(symbol=tv_ticker, exchange='EGX', interval=tv_interval_val, n_bars=600)
             if df_tv is not None and not df_tv.empty:
                 df_tv.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
+                if 'symbol' in df_tv.columns: df_tv.drop(columns=['symbol'], inplace=True)
                 df = df_tv
         except Exception as e:
             print(f"TV fetch error for {ticker}: {e}")
@@ -323,7 +324,7 @@ if st.session_state["user"] is None and saved_token and isinstance(saved_token, 
         st.session_state["user"] = user
         st.session_state["user_data"] = fb.get_user_data(user["localId"], user["idToken"])
         st.rerun()
-    except:
+    except Exception:
         pass # التوكن غير صالح أو منتهي
 
 # شاشة تسجيل الدخول / إنشاء حساب
