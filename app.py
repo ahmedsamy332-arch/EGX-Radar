@@ -209,8 +209,8 @@ st.set_page_config(page_title="نسر البورصة المصرية", layout="ce
 # CSS مخصص لتحسين الخطوط والأنيميشن
 st.markdown("""
 <style>
-/* إخفاء شريط أدوات Streamlit العلوي */
-.stAppDeployButton, [data-testid="stToolbar"] {
+/* إخفاء أدوات Streamlit والعلامة المائية */
+.stAppDeployButton, [data-testid="stToolbar"], [data-testid="stAppDeployButton"], .viewerBadge_container, .viewerBadge_link {
     display: none !important;
 }
 #MainMenu {visibility: hidden;}
