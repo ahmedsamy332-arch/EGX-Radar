@@ -153,6 +153,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         "وقف الخسارة": sl_str,
         "السيولة": vol_status,
         "الزخم (RSI)": round(rsi_14, 1),
+        "قوة التقييم": score if is_valid_for_day_trading else "غير صالح",
         "التوجيه الحالي": signal,
         "Score": score
     }
