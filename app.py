@@ -256,7 +256,7 @@ p, label, span, li {
 }
 /* كلاس مخصص لاسم البرنامج عشان نكبره براحتنا */
 .main-eagle-title {
-    font-size: 80px !important;
+    font-size: 48px !important;
     font-weight: 900 !important;
     color: #1e3c72 !important;
     line-height: 1.2 !important;
