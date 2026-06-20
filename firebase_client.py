@@ -15,6 +15,8 @@ def init_firebase_admin():
                 import streamlit as st
                 if "firebase" in st.secrets:
                     cred_dict = dict(st.secrets["firebase"])
+                    if "private_key" in cred_dict:
+                        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
                     cred = credentials.Certificate(cred_dict)
                     firebase_admin.initialize_app(cred)
                 else:
