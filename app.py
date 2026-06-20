@@ -321,8 +321,8 @@ h1 {
 # عنوان الموقع والإمضاء بتصميم متناسق مع حجم الخطوط
 st.markdown("""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: -30px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e6e6e6; width: 100%;">
-    <div style="font-size: 52px; font-weight: 900; color: #1e3c72; margin: 0; padding: 0; text-align: center;">🦅 نسر البورصة</div>
-    <div style="font-size: 20px; color: #666; font-weight: bold; font-family: sans-serif; margin-top: 5px; text-align: center;">
+    <div style="font-size: 80px; font-weight: 900; color: #1e3c72; margin: 0; padding: 0; text-align: center; line-height: 1.2;">🦅 نسر البورصة</div>
+    <div style="font-size: 16px; color: #666; font-weight: bold; font-family: sans-serif; margin-top: 10px; text-align: center;">
         <span style="font-weight: normal; color: #888;">By</span> <span style="color: #0056b3;">AHMED SAMY</span>
     </div>
 </div>
