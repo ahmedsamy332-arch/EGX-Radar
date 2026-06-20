@@ -129,41 +129,6 @@ for sector, stocks in egx_stocks.items():
     for ticker in stocks.keys():
         stock_sectors[ticker] = clean_sector_name
 
-
-# 3. إعدادات التحليل والمدى الزمني
-st.subheader("⚙️ 1. إعدادات التحليل والمدى الزمني")
-timeframe = st.radio(
-    "اختر المدى الزمني للرادار:",
-    ["مضاربة لحظية (15 دقيقة) - لتداول نفس الجلسة", 
-     "مضاربة قصيرة (ساعة) - لسوينجات أيام", 
-     "تداول يومي (شمعة يومية) - للاتجاه العام والمستثمر"],
-    index=None
-)
-if not timeframe:
-    st.info("👈 يرجى اختيار المدى الزمني لفتح البرنامج.")
-    st.stop()
-
-
-if "15 دقيقة" in timeframe:
-    yf_period = "60d"
-    yf_interval = "15m"
-elif "ساعة" in timeframe:
-    yf_period = "730d"
-    yf_interval = "1h"
-else:
-    yf_period = "2y"
-    yf_interval = "1d"
-
 egx30_list = ["COMI.CA", "FWRY.CA", "EFIH.CA", "EGAL.CA", "ABUK.CA", "TMGH.CA", "HRHO.CA", "SWDY.CA", "ETEL.CA", "ESRS.CA", "AMOC.CA", "SKPC.CA", "HELI.CA", "PHDC.CA", "MFPC.CA", "MASR.CA", "ORAS.CA", "ORWE.CA", "ISPH.CA", "CIEB.CA", "ADIB.CA", "AUTO.CA", "CLHO.CA", "JUFO.CA", "SUGR.CA", "BTFH.CA", "DOMT.CA", "OIH.CA", "MTIE.CA", "CCAP.CA", "EMFD.CA", "RMDA.CA", "QNBA.CA", "HDBK.CA", "SAUD.CA"]
 egx70_list = [t for t in stock_names.keys() if t not in egx30_list]
 egx100_list = egx30_list + egx70_list
-
-favorites_list = st.session_state['user_data'].get('favorites', [])
-portfolio_list = st.session_state['user_data'].get('portfolio', [])
-st.markdown('---')
-
-is_admin = st.session_state['user'].get('email', '').strip().lower() == "ahmedsamy332@gmail.com"
-
-favorites_list = st.session_state['user_data'].get('favorites', []) if 'user_data' in st.session_state else []
-portfolio_list = st.session_state['user_data'].get('portfolio', []) if 'user_data' in st.session_state else []
-is_admin = st.session_state['user'].get('email', '').strip().lower() == 'ahmedsamy332@gmail.com' if 'user' in st.session_state and st.session_state['user'] else False
