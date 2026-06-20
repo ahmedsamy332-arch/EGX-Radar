@@ -7,3 +7,4 @@ patch_auth.py
 patch_app.py
 Dockerfile
 .dockerignore
+firebase_credentials.json

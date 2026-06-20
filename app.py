@@ -249,6 +249,32 @@ footer {visibility: hidden;}
 
 html, body, [class*="css"] {
     font-family: 'Cairo', sans-serif !important;
+    font-size: 18px !important;
+}
+
+/* قلب اتجاه الشاشة بالكامل من اليمين لليسار */
+.stApp {
+    direction: rtl;
+}
+
+/* محاذاة كل النصوص لليمين */
+p, div, span, h1, h2, h3, h4, h5, h6, label {
+    text-align: right !important;
+}
+
+/* تكبير حجم الخطوط لجميع العناصر */
+p, span, div, label, .stMarkdown, .stText {
+    font-size: 18px !important;
+}
+
+h1 { font-size: 32px !important; }
+h2 { font-size: 28px !important; }
+h3 { font-size: 24px !important; }
+
+/* قلب اتجاه القائمة الجانبية */
+section[data-testid="stSidebar"] {
+    direction: rtl;
+    text-align: right;
 }
 
 /* Button styling & animation */
@@ -547,7 +573,13 @@ egx100_list = egx30_list + egx70_list
 favorites_list = st.session_state['user_data'].get('favorites', [])
 portfolio_list = st.session_state['user_data'].get('portfolio', [])
 st.markdown('---')
-tabs = st.tabs(['📊 رادار السوق', '⭐ المفضلة', '💼 محفظتي الذكية'])
+
+is_admin = st.session_state['user'].get('email', '').strip().lower() == "ahmedsamy332@gmail.com"
+tab_names = ['📊 رادار السوق', '⭐ المفضلة', '💼 محفظتي الذكية']
+if is_admin:
+    tab_names.append('👑 لوحة الإدارة')
+
+tabs = st.tabs(tab_names)
 
 with tabs[0]:
 
@@ -814,4 +846,47 @@ with tabs[2]:
                 <h4 style='color:{t_color}; margin:5px 0 0 0;'>الأرباح/الخسائر: {tot_pnl:,.0f} ج.م ({tot_perc:,.1f}%)</h4>
             </div>
             """, unsafe_allow_html=True)
+
+
+if is_admin:
+    with tabs[3]:
+        st.subheader("👑 لوحة تحكم الإدارة")
+        st.write("هذه اللوحة تظهر لك فقط بصفتك مدير النظام.")
+        
+        users_list = fb.get_all_users()
+        if not users_list:
+            st.warning("لم يتم العثور على مستخدمين أو ملف الصلاحيات غير متوفر.")
+        else:
+            st.info(f"إجمالي عدد المستخدمين المسجلين: **{len(users_list)}**")
+            
+            for u in users_list:
+                status = "🔴 موقوف" if u["disabled"] else "🟢 نشط"
+                
+                # Format timestamps safely
+                import datetime
+                created = datetime.datetime.fromtimestamp(u["creationTime"]/1000).strftime('%Y-%m-%d %H:%M') if u["creationTime"] else "غير معروف"
+                last_sign_in = datetime.datetime.fromtimestamp(u["lastSignInTime"]/1000).strftime('%Y-%m-%d %H:%M') if u["lastSignInTime"] else "لم يسجل دخول"
+                
+                with st.expander(f"{status} | {u['email']}"):
+                    st.write(f"**تاريخ التسجيل:** {created}")
+                    st.write(f"**آخر دخول:** {last_sign_in}")
+                    
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        if u["disabled"]:
+                            if st.button("✅ تفعيل الحساب", key=f"en_{u['uid']}"):
+                                if fb.disable_user(u["uid"], False):
+                                    st.success("تم التفعيل!")
+                                    st.rerun()
+                        else:
+                            if st.button("🚫 إيقاف الحساب", key=f"dis_{u['uid']}"):
+                                if fb.disable_user(u["uid"], True):
+                                    st.warning("تم إيقاف الحساب!")
+                                    st.rerun()
+                    with c2:
+                        if st.button("🗑️ حذف الحساب نهائياً", key=f"del_{u['uid']}"):
+                            if fb.delete_user(u["uid"]):
+                                st.error("تم الحذف بنجاح!")
+                                st.rerun()
+
 
