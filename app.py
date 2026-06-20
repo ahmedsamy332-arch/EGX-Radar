@@ -252,13 +252,18 @@ html, body, [class*="css"] {
     font-size: 18px !important;
 }
 
-/* قلب اتجاه المحتوى فقط من اليمين لليسار عشان منبوظش الـ Scrollbar */
-[data-testid="stAppViewBlockContainer"] {
+/* قلب اتجاه المحتوى من اليمين لليسار باستخدام الكلاسات الأساسية لستريمليت */
+.block-container {
+    direction: rtl;
+    text-align: right;
+}
+
+[data-testid="stSidebar"] {
     direction: rtl;
 }
 
 /* محاذاة كل النصوص لليمين */
-p, div, span, h1, h2, h3, h4, h5, h6, label {
+p, div, span, h1, h2, h3, h4, h5, h6, label, .stMarkdown, .stText {
     text-align: right !important;
 }
 
