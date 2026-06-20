@@ -1,6 +1,7 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import datetime
 from tvDatafeed import TvDatafeed, Interval
 
 import firebase_client as fb
@@ -217,6 +218,18 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     else:
         score_percent = "غير صالح"
 
+    # حساب نسبة المخاطرة للعائد (Risk:Reward)
+    if score >= 0:
+        risk = entry_point - stop_loss
+        reward = take_profit - entry_point
+        if risk > 0:
+            rr_ratio = round(reward / risk, 1)
+            rr_str = f"1:{rr_ratio}"
+        else:
+            rr_str = "-"
+    else:
+        rr_str = "-"
+
     return {
         "المؤشر": index_name,
         "القطاع": sector_name,
@@ -226,6 +239,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         "الدخول المقترح": entry_str,
         "الهدف المتوقع": tp_str,
         "وقف الخسارة": sl_str,
+        "المخاطرة:العائد": rr_str,
         "السيولة": vol_status,
         "الزخم (RSI)": round(rsi_14, 1),
         "قوة التقييم": score_percent,
@@ -277,9 +291,9 @@ p, div, span, h1, h2, h3, h4, h5, h6, label, .stMarkdown, .stText {
     text-align: right !important;
 }
 
-/* تكبير حجم الخطوط لجميع العناصر */
-p, span, div, label, .stMarkdown, .stText {
-    font-size: 18px !important;
+/* تكبير حجم الخطوط للعناصر النصية فقط بدون التأثير على التصميمات المخصصة */
+.stMarkdown p, .stText {
+    font-size: 18px;
 }
 
 h1 { font-size: 32px !important; }
@@ -707,7 +721,7 @@ with tabs[1]:
             # تحليل يومي
             res_1d = analyze_stock_cached(ticker, "2y", "1d", arabic_name, sector_name, "EGX30")
             # تحليل ساعة
-            res_1h = analyze_stock_cached(ticker, "730d", "1h", arabic_name, sector_name, "EGX30")
+            res_1h = analyze_stock_cached(ticker, "60d", "1h", arabic_name, sector_name, "EGX30")
             
             if res_1d and res_1h:
                 score_1d = res_1d.get("Score", 0)
@@ -944,7 +958,6 @@ if is_admin:
                 status = "🔴 موقوف" if u["disabled"] else "🟢 نشط"
                 
                 # Format timestamps safely
-                import datetime
                 created = datetime.datetime.fromtimestamp(u["creationTime"]/1000).strftime('%Y-%m-%d %H:%M') if u["creationTime"] else "غير معروف"
                 last_sign_in = datetime.datetime.fromtimestamp(u["lastSignInTime"]/1000).strftime('%Y-%m-%d %H:%M') if u["lastSignInTime"] else "لم يسجل دخول"
                 
