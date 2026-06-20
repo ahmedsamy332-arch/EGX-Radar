@@ -252,8 +252,8 @@ html, body, [class*="css"] {
     font-size: 18px !important;
 }
 
-/* قلب اتجاه الشاشة بالكامل من اليمين لليسار */
-.stApp {
+/* قلب اتجاه المحتوى فقط من اليمين لليسار عشان منبوظش الـ Scrollbar */
+[data-testid="stAppViewBlockContainer"] {
     direction: rtl;
 }
 
