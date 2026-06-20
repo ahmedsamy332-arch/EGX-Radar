@@ -361,6 +361,11 @@ else:
     yf_period = "2y"
     yf_interval = "1d"
 
+favorites_list = st.session_state.get('user_data', {}).get('favorites', [])
+portfolio_list = st.session_state.get('user_data', {}).get('portfolio', [])
+user_obj = st.session_state.get('user')
+is_admin = user_obj.get('email', '').strip().lower() == "ahmedsamy332@gmail.com" if user_obj else False
+
 tab_names = ['📊 رادار السوق', '🔥 الفرص الذهبية', '⭐ المفضلة', '💼 محفظتي الذكية']
 if is_admin:
     tab_names.append('👑 لوحة الإدارة')
