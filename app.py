@@ -725,9 +725,19 @@ if is_admin:
             for u in users_list:
                 status = "🔴 موقوف" if u["disabled"] else "🟢 نشط"
                 
-                # Format timestamps safely
-                created = datetime.datetime.fromtimestamp(u["creationTime"]/1000).strftime('%Y-%m-%d %H:%M') if u["creationTime"] else "غير معروف"
-                last_sign_in = datetime.datetime.fromtimestamp(u["lastSignInTime"]/1000).strftime('%Y-%m-%d %H:%M') if u["lastSignInTime"] else "لم يسجل دخول"
+                # Format timestamps safely (Egypt time: UTC+3)
+                def format_eg_time(ts_ms):
+                    if not ts_ms: return "غير متوفر"
+                    import datetime
+                    dt_utc = datetime.datetime.fromtimestamp(ts_ms / 1000.0, tz=datetime.timezone.utc)
+                    dt_eg = dt_utc + datetime.timedelta(hours=3)
+                    ampm = "م" if dt_eg.hour >= 12 else "ص"
+                    hr = dt_eg.hour % 12
+                    hr = 12 if hr == 0 else hr
+                    return dt_eg.strftime(f'%Y-%m-%d {hr:02d}:%M ') + ampm
+
+                created = format_eg_time(u.get("creationTime"))
+                last_sign_in = format_eg_time(u.get("lastSignInTime"))
                 
                 with st.expander(f"{status} | {u['email']}"):
                     st.write(f"**تاريخ التسجيل:** {created}")
