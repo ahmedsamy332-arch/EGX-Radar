@@ -159,14 +159,22 @@ def get_all_users():
     """Admin only: get all users"""
     users = []
     try:
+        from firebase_admin import firestore
+        db = firestore.client()
+        docs = db.collection("users").stream()
+        active_times = {doc.id: doc.to_dict().get("last_active", 0) for doc in docs if doc.to_dict()}
+        
         page = auth.list_users()
         while page:
             for user in page.users:
+                u_active = active_times.get(user.uid, 0)
+                last_time = max(u_active, user.user_metadata.last_sign_in_timestamp or 0)
+                
                 users.append({
                     "uid": user.uid,
                     "email": user.email,
                     "creationTime": user.user_metadata.creation_timestamp,
-                    "lastSignInTime": user.user_metadata.last_sign_in_timestamp,
+                    "lastSignInTime": last_time,
                     "disabled": user.disabled
                 })
             page = page.get_next_page()

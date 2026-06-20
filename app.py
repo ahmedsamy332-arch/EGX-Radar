@@ -194,6 +194,16 @@ if st.session_state["user"] is None:
     
     st.stop()
 
+# تحديث آخر ظهور لو مر أكتر من 5 دقائق (300 ثانية)
+import time
+current_time = int(time.time() * 1000)
+last_active = st.session_state["user_data"].get("last_active", 0)
+if current_time - last_active > 300000:
+    st.session_state["user_data"]["last_active"] = current_time
+    try:
+        fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
+    except Exception:
+        pass
 # القائمة الجانبية
 with st.sidebar:
     st.write(f"👤 {st.session_state['user'].get('email', '')}")
