@@ -6,7 +6,7 @@ from tvDatafeed import TvDatafeed, Interval
 
 import firebase_client as fb
 
-from analyzer import analyze_stock_cached, get_daily_performance, get_stock_chart_data
+from analyzer import analyze_stock_cached, get_daily_performance
 from data_assets import *
 
 
