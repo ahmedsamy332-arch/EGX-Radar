@@ -106,6 +106,7 @@ def get_user_data(uid, token):
         
     if "favorites" not in parsed: parsed["favorites"] = []
     if "portfolio" not in parsed: parsed["portfolio"] = []
+    if "alerts" not in parsed: parsed["alerts"] = []
         
     return parsed
 

@@ -504,14 +504,48 @@ for sector, stocks in egx_stocks.items():
 
 favorites_list = st.session_state.get('user_data', {}).get('favorites', [])
 portfolio_list = st.session_state.get('user_data', {}).get('portfolio', [])
+alerts_list = st.session_state.get('user_data', {}).get('alerts', [])
 user_obj = st.session_state.get('user')
 is_admin = user_obj.get('email', '').strip().lower() == "ahmedsamy332@gmail.com" if user_obj else False
 
-tab_names = ['📊 رادار السوق', '🔥 الفرص الذهبية', '📉 قنص القيعان', '📈 حصاد الجلسة', '⭐ المفضلة', '💼 محفظتي الذكية']
+tab_names = ['📊 رادار السوق', '🔥 الفرص الذهبية', '📉 قنص القيعان', '📈 حصاد الجلسة', '⭐ المفضلة', '💼 محفظتي الذكية', '🔔 التنبيهات']
 if is_admin:
     tab_names.append('👑 لوحة الإدارة')
 
 tabs = st.tabs(tab_names)
+
+# --- نظام فحص التنبيهات (Price Alerts Trigger) ---
+if alerts_list:
+    active_alerts = [a for a in alerts_list if a.get("status") == "active"]
+    if active_alerts:
+        alerts_changed = False
+        for alert in active_alerts:
+            ticker = alert["ticker"]
+            res = analyze_stock_cached(ticker, "2y", "1d", alert.get("arabic_name", ""), "", "")
+            if res and "السعر الحالي" in res:
+                current_price = res["السعر الحالي"]
+                target = alert["target_price"]
+                cond = alert["condition"]
+                triggered = False
+                
+                if "أكبر من" in cond and current_price >= target:
+                    triggered = True
+                elif "أقل من" in cond and current_price <= target:
+                    triggered = True
+                    
+                if triggered:
+                    alert["status"] = "triggered"
+                    alerts_changed = True
+                    st.toast(f"🔔 تنبيه محقق: {alert['arabic_name']} وصل لسعر {current_price} (الهدف: {target})!", icon="🎯")
+                    st.balloons()
+        
+        if alerts_changed:
+            st.session_state['user_data']['alerts'] = alerts_list
+            try:
+                update_user_data(st.session_state['user']['localId'], st.session_state['user']['idToken'], st.session_state['user_data'])
+            except Exception:
+                pass
+# ------------------------------------------------
 
 with tabs[0]:
     st.subheader("⚙️ 1. إعدادات التحليل والمدى الزمني")
@@ -959,9 +993,101 @@ with tabs[4]:
                 res_df = pd.DataFrame(fav_results)
                 res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
                 res_df.reset_index(drop=True, inplace=True)
+                
+                # Check alerts triggers
+                for entry in fav_results:
+                    for alert in alerts_list:
+                        if alert['status'] == 'active' and alert['ticker'] == entry['ticker']:
+                            trigger = False
+                            if "أكبر" in alert['condition']:
+                                if entry['السعر الحالي'] >= alert['target_price']: trigger = True
+                            else:
+                                if entry['السعر الحالي'] <= alert['target_price']: trigger = True
+                            if trigger:
+                                alert['status'] = 'triggered'
+                
+                st.session_state['user_data']['alerts'] = alerts_list
+                try:
+                    update_user_data(st.session_state['user']['localId'], st.session_state['user']['idToken'], st.session_state['user_data'])
+                except: pass
+                
                 st.dataframe(res_df, use_container_width=True)
             else:
                 st.warning("تعذر جلب البيانات للمفضلة.")
+
+
+with tabs[6]:
+    st.subheader("🔔 تنبيهات الأسعار")
+    st.markdown("احصل على إشعار داخل التطبيق عند وصول السهم لسعر معين (تعمل هذه الخاصية أثناء فتحك للرادار).")
+
+    with st.expander("➕ إضافة تنبيه جديد", expanded=False):
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            alert_stock = st.selectbox("اختر السهم", [""] + list(stock_names.keys()), format_func=lambda x: f"{x} - {stock_names[x]}" if x else "")
+        with col2:
+            alert_cond = st.selectbox("الشرط", ["أكبر من أو يساوي 📈", "أقل من أو يساوي 📉"])
+        with col3:
+            alert_price = st.number_input("السعر المستهدف", min_value=0.0, step=0.01)
+        
+        if st.button("حفظ التنبيه"):
+            if not alert_stock:
+                st.error("الرجاء اختيار السهم.")
+            elif alert_price <= 0:
+                st.error("الرجاء إدخال سعر صحيح.")
+            else:
+                new_alert = {
+                    "ticker": alert_stock,
+                    "arabic_name": stock_names[alert_stock],
+                    "condition": alert_cond,
+                    "target_price": alert_price,
+                    "status": "active"
+                }
+                alerts_list.append(new_alert)
+                st.session_state['user_data']['alerts'] = alerts_list
+                try:
+                    update_user_data(st.session_state['user']['localId'], st.session_state['user']['idToken'], st.session_state['user_data'])
+                    st.success("تم إضافة التنبيه بنجاح!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"خطأ في الحفظ: {e}")
+
+    if alerts_list:
+        active_alerts = [a for a in alerts_list if a.get("status") == "active"]
+        triggered_alerts = [a for a in alerts_list if a.get("status") == "triggered"]
+        
+        if active_alerts:
+            st.markdown("### 🟢 تنبيهات نشطة")
+            df_active = pd.DataFrame(active_alerts)[["ticker", "arabic_name", "condition", "target_price"]]
+            df_active.columns = ["الكود", "اسم السهم", "الشرط", "السعر المستهدف"]
+            st.dataframe(df_active, use_container_width=True)
+            
+            del_active = st.selectbox("اختر تنبيه نشط لحذفه:", [""] + [f"{a['ticker']} - {a['condition']} {a['target_price']}" for a in active_alerts])
+            if st.button("🗑️ حذف التنبيه"):
+                if del_active:
+                    st.session_state['user_data']['alerts'] = [a for a in alerts_list if not (f"{a['ticker']} - {a['condition']} {a['target_price']}" == del_active and a.get("status") == "active")]
+                    try:
+                        update_user_data(st.session_state['user']['localId'], st.session_state['user']['idToken'], st.session_state['user_data'])
+                        st.success("تم الحذف بنجاح!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"خطأ في الحفظ: {e}")
+
+        if triggered_alerts:
+            st.markdown("### 🔴 تنبيهات متحققة (سابقة)")
+            df_trig = pd.DataFrame(triggered_alerts)[["ticker", "arabic_name", "condition", "target_price"]]
+            df_trig.columns = ["الكود", "اسم السهم", "الشرط", "السعر المستهدف"]
+            st.dataframe(df_trig, use_container_width=True)
+            
+            if st.button("🧹 مسح التنبيهات المتحققة"):
+                st.session_state['user_data']['alerts'] = [a for a in alerts_list if a.get("status") != "triggered"]
+                try:
+                    update_user_data(st.session_state['user']['localId'], st.session_state['user']['idToken'], st.session_state['user_data'])
+                    st.success("تم المسح بنجاح!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"خطأ في الحفظ: {e}")
+    else:
+        st.info("لا توجد تنبيهات حالية.")
 
 
 with tabs[5]:
