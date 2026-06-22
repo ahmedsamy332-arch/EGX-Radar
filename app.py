@@ -939,13 +939,32 @@ with tabs[5]:
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"❌ حذف من المحفظة", key=f"del_{ticker}"):
-                    st.session_state["user_data"]["portfolio"] = [x for x in portfolio_list if x["ticker"] != ticker]
-                    try:
-                        fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"خطأ: {e}")
+                col_b1, col_b2 = st.columns([1, 1])
+                with col_b1:
+                    if st.button(f"❌ حذف من المحفظة", key=f"del_{ticker}", use_container_width=True):
+                        st.session_state["user_data"]["portfolio"] = [x for x in portfolio_list if x["ticker"] != ticker]
+                        try:
+                            fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"خطأ: {e}")
+                
+                with col_b2:
+                    tf_options = ["مضاربة لحظية (15 دقيقة)", "مضاربة قصيرة (ساعة)", "تداول يومي (شمعة يومية)"]
+                    current_idx = 2
+                    if "15" in tf: current_idx = 0
+                    elif "ساعة" in tf: current_idx = 1
+                    
+                    new_tf = st.selectbox("تغيير المدى الزمني:", tf_options, index=current_idx, key=f"edit_tf_{ticker}", label_visibility="collapsed")
+                    if new_tf != tf:
+                        for item in st.session_state["user_data"]["portfolio"]:
+                            if item["ticker"] == ticker:
+                                item["timeframe"] = new_tf
+                        try:
+                            fb.update_user_data(st.session_state["user"]["localId"], st.session_state["user"]["idToken"], st.session_state["user_data"])
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"خطأ: {e}")
 
         if total_portfolio_cost > 0:
             tot_pnl = total_portfolio_value - total_portfolio_cost
