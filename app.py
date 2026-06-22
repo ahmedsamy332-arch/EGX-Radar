@@ -874,15 +874,16 @@ with tabs[5]:
                 if radar_sl != "-" and radar_tp != "-":
                     sl_val = float(radar_sl)
                     tp_val = float(radar_tp)
-                    if sl_val < buy_price:
+                    if sl_val < current_price:
                         act_sl = sl_val
                     else:
-                        act_sl = buy_price * 0.95
+                        act_sl = current_price * 0.95
                 else:
-                    act_sl = buy_price * 0.95
+                    sl_val = buy_price * 0.95
+                    act_sl = current_price * 0.95
                     tp_val = buy_price * 1.05
 
-                if current_price <= act_sl:
+                if current_price <= sl_val or pnl_perc <= -5.0:
                     action = "🛑 فعل وقف الخسارة!"
                     card_color = "rgba(255, 235, 238, 0.5)"
                 elif current_price >= tp_val:
@@ -918,6 +919,9 @@ with tabs[5]:
                     <div style='font-size:13px; color:#666; display:flex; justify-content:space-between;'>
                         <span>🎯 الهدف المقترح: {tp_val:.2f}</span>
                         <span>🛑 وقف الخسارة: {act_sl:.2f}</span>
+                    </div>
+                    <div style='margin-top:10px; padding:10px; background-color:rgba(255,255,255,0.7); border-radius:8px; font-size:14px; color:#333; border: 1px solid #eee;'>
+                        <b>💡 تقييم السهم فنياً:</b> {res_live.get('التوجيه الحالي', 'غير متوفر')}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
