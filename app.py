@@ -576,18 +576,38 @@ with tabs[1]:
 
 with tabs[2]:
     st.subheader("📉 قنص القيعان (Oversold Scanner)")
-    st.write("البرنامج هيفحص أسهم السوق بالكامل (EGX30 و EGX70) وهيرشحلك الأسهم اللي نزلت لأقصى قاع لها (التشبع البيعي) وفي احتمالية كويسة لارتدادها.")
     
-    if st.button("🔎 ابدأ فحص قنص القيعان", use_container_width=True):
+    sniper_index_choice = st.radio(
+        "اختر المؤشر لبحث قنص القيعان:",
+        ["EGX30 و EGX70 (الأسهم النشطة)", "EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
+        horizontal=True,
+        index=0
+    )
+    
+    if "30 و" in sniper_index_choice:
+        sniper_list = list(set(egx30_list + egx70_list))
+        s_idx_name = "EGX30 و EGX70"
+    elif "30" in sniper_index_choice:
+        sniper_list = egx30_list
+        s_idx_name = "EGX30"
+    elif "70" in sniper_index_choice:
+        sniper_list = egx70_list
+        s_idx_name = "EGX70"
+    else:
+        sniper_list = egx100_list
+        s_idx_name = "EGX100"
+
+    st.write(f"البرنامج هيفحص أسهم {s_idx_name} وهيرشحلك الأسهم اللي نزلت لأقصى قاع لها (التشبع البيعي) وفي احتمالية كويسة لارتدادها.")
+    
+    if st.button(f"🔎 ابدأ فحص قنص القيعان في {s_idx_name}", use_container_width=True):
         st.cache_data.clear()
         oversold_results = []
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        combined_list = list(set(egx30_list + egx70_list))
-        total = len(combined_list)
+        total = len(sniper_list)
         
-        for i, ticker in enumerate(combined_list):
+        for i, ticker in enumerate(sniper_list):
             arabic_name = stock_names.get(ticker, "")
             status_text.markdown(f"**⏳ جاري الفحص:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
             sector_name = stock_sectors.get(ticker, "غير محدد")
