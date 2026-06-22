@@ -6,7 +6,7 @@ from tvDatafeed import TvDatafeed, Interval
 
 import firebase_client as fb
 
-from analyzer import analyze_stock_cached
+from analyzer import analyze_stock_cached, get_daily_performance
 from data_assets import *
 
 
@@ -634,7 +634,6 @@ with tabs[3]:
         status_text = st.empty()
         
         total = len(egx100_list)
-        from analyzer import get_daily_performance
         
         for i, ticker in enumerate(egx100_list):
             arabic_name = stock_names.get(ticker, "")
