@@ -711,21 +711,31 @@ with tabs[4]:
         favorites_list = new_favorites
 
     if favorites_list:
-        st.write("📊 **إشارات المفضلة الآن:**")
-        cols = st.columns(min(len(favorites_list), 4) if len(favorites_list) > 0 else 1)
-
-        for i, fav_ticker in enumerate(favorites_list):
-            with cols[i % 4]:
+        if st.button("🔍 فحص قائمتي المفضلة", use_container_width=True):
+            st.write("📊 **نتائج فحص المفضلة:**")
+            fav_results = []
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            for i, fav_ticker in enumerate(favorites_list):
                 arabic_name = stock_names.get(fav_ticker, "")
                 sector_name = stock_sectors.get(fav_ticker, "غير محدد")
-                index_name = "EGX30" if fav_ticker in egx30_list else ("EGX70" if fav_ticker in egx70_list else "-")
-
+                index_name = "EGX30" if fav_ticker in egx30_list else ("EGX70" if fav_ticker in egx70_list else "EGX100")
+                
+                status_text.markdown(f"**⏳ جاري فحص:** {arabic_name} ({fav_ticker}) ... [{i+1}/{len(favorites_list)}]")
                 res = analyze_stock_cached(fav_ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
                 if res:
-                    signal = res['التوجيه الحالي'].split(' ')[0] # just the emoji
-                    st.markdown(f"<div style='border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;'><b>{fav_ticker.replace('.CA', '')}</b><br>{signal} {res['السعر الحالي']}<br><span style='font-size:12px;color:#666;'>دخول: {res['الدخول المقترح']} | هدف: {res['الهدف المتوقع']}<br>وقف: {res['وقف الخسارة']}</span></div>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<div style='border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;'><b>{fav_ticker.replace('.CA', '')}</b><br>⏳ جاري..</div>", unsafe_allow_html=True)
+                    fav_results.append(res)
+                progress_bar.progress((i + 1) / len(favorites_list))
+                
+            status_text.empty()
+            if fav_results:
+                res_df = pd.DataFrame(fav_results)
+                res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
+                res_df.reset_index(drop=True, inplace=True)
+                st.dataframe(res_df, use_container_width=True)
+            else:
+                st.warning("تعذر جلب البيانات للمفضلة.")
 
 
 with tabs[5]:
