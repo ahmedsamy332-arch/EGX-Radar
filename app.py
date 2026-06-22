@@ -579,15 +579,12 @@ with tabs[2]:
     
     sniper_index_choice = st.radio(
         "اختر المؤشر لبحث قنص القيعان:",
-        ["EGX30 و EGX70 (الأسهم النشطة)", "EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
+        ["EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
         horizontal=True,
-        index=0
+        index=2
     )
     
-    if "30 و" in sniper_index_choice:
-        sniper_list = list(set(egx30_list + egx70_list))
-        s_idx_name = "EGX30 و EGX70"
-    elif "30" in sniper_index_choice:
+    if "30" in sniper_index_choice:
         sniper_list = egx30_list
         s_idx_name = "EGX30"
     elif "70" in sniper_index_choice:
