@@ -711,6 +711,25 @@ with tabs[4]:
         favorites_list = new_favorites
 
     if favorites_list:
+        timeframe_fav = st.radio(
+            "اختر المدى الزمني للفحص:",
+            ["مضاربة لحظية (15 دقيقة) - لتداول نفس الجلسة", 
+             "مضاربة قصيرة (ساعة) - لسوينجات أيام", 
+             "تداول يومي (شمعة يومية) - للاتجاه العام والمستثمر"],
+            index=2,
+            key="fav_timeframe"
+        )
+        
+        if "15 دقيقة" in timeframe_fav:
+            fav_yf_period = "60d"
+            fav_yf_interval = "15m"
+        elif "ساعة" in timeframe_fav:
+            fav_yf_period = "730d"
+            fav_yf_interval = "1h"
+        else:
+            fav_yf_period = "2y"
+            fav_yf_interval = "1d"
+
         if st.button("🔍 فحص قائمتي المفضلة", use_container_width=True):
             st.write("📊 **نتائج فحص المفضلة:**")
             fav_results = []
@@ -723,7 +742,7 @@ with tabs[4]:
                 index_name = "EGX30" if fav_ticker in egx30_list else ("EGX70" if fav_ticker in egx70_list else "EGX100")
                 
                 status_text.markdown(f"**⏳ جاري فحص:** {arabic_name} ({fav_ticker}) ... [{i+1}/{len(favorites_list)}]")
-                res = analyze_stock_cached(fav_ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
+                res = analyze_stock_cached(fav_ticker, fav_yf_period, fav_yf_interval, arabic_name, sector_name, index_name)
                 if res:
                     fav_results.append(res)
                 progress_bar.progress((i + 1) / len(favorites_list))
