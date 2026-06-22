@@ -347,30 +347,6 @@ for sector, stocks in egx_stocks.items():
         stock_sectors[ticker] = clean_sector_name
 
 
-# 3. إعدادات التحليل والمدى الزمني
-st.subheader("⚙️ 1. إعدادات التحليل والمدى الزمني")
-timeframe = st.radio(
-    "اختر المدى الزمني للرادار:",
-    ["مضاربة لحظية (15 دقيقة) - لتداول نفس الجلسة", 
-     "مضاربة قصيرة (ساعة) - لسوينجات أيام", 
-     "تداول يومي (شمعة يومية) - للاتجاه العام والمستثمر"],
-    index=None
-)
-if not timeframe:
-    st.info("👈 يرجى اختيار المدى الزمني لفتح البرنامج.")
-    st.stop()
-
-
-if "15 دقيقة" in timeframe:
-    yf_period = "60d"
-    yf_interval = "15m"
-elif "ساعة" in timeframe:
-    yf_period = "730d"
-    yf_interval = "1h"
-else:
-    yf_period = "2y"
-    yf_interval = "1d"
-
 favorites_list = st.session_state.get('user_data', {}).get('favorites', [])
 portfolio_list = st.session_state.get('user_data', {}).get('portfolio', [])
 user_obj = st.session_state.get('user')
@@ -383,6 +359,24 @@ if is_admin:
 tabs = st.tabs(tab_names)
 
 with tabs[0]:
+    st.subheader("⚙️ 1. إعدادات التحليل والمدى الزمني")
+    timeframe = st.radio(
+        "اختر المدى الزمني للرادار والمفضلة:",
+        ["مضاربة لحظية (15 دقيقة) - لتداول نفس الجلسة", 
+         "مضاربة قصيرة (ساعة) - لسوينجات أيام", 
+         "تداول يومي (شمعة يومية) - للاتجاه العام والمستثمر"],
+        index=2
+    )
+
+    if "15 دقيقة" in timeframe:
+        yf_period = "60d"
+        yf_interval = "15m"
+    elif "ساعة" in timeframe:
+        yf_period = "730d"
+        yf_interval = "1h"
+    else:
+        yf_period = "2y"
+        yf_interval = "1d"
 
     def format_stock_option(ticker):
         name = stock_names.get(ticker, "")
