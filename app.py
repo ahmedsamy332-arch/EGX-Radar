@@ -662,11 +662,11 @@ with tabs[3]:
             
             with col_gain:
                 st.markdown("<h3 style='text-align: center; color: #28a745;'>🟢 الأكثر صعوداً (Top Gainers)</h3>", unsafe_allow_html=True)
-                st.dataframe(top_gainers.style.applymap(lambda x: 'color: #28a745; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
+                st.dataframe(top_gainers.style.map(lambda x: 'color: #28a745; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
                 
             with col_lose:
                 st.markdown("<h3 style='text-align: center; color: #dc3545;'>🔴 الأكثر هبوطاً (Top Losers)</h3>", unsafe_allow_html=True)
-                st.dataframe(top_losers.style.applymap(lambda x: 'color: #dc3545; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
+                st.dataframe(top_losers.style.map(lambda x: 'color: #dc3545; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
         else:
             st.warning("عفواً، لا توجد بيانات متاحة حالياً.")
 
