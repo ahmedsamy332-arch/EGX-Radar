@@ -844,6 +844,27 @@ with tabs[5]:
 
     if portfolio_list:
         st.write("📊 **تفاصيل المحفظة:**")
+        
+        timeframe_port = st.radio(
+            "اختر المدى الزمني لتقييم المحفظة:",
+            ["مضاربة لحظية (15 دقيقة)", 
+             "مضاربة قصيرة (ساعة)", 
+             "تداول يومي (شمعة يومية)"],
+            index=2,
+            key="port_timeframe",
+            horizontal=True
+        )
+        
+        if "15 دقيقة" in timeframe_port:
+            port_yf_period = "60d"
+            port_yf_interval = "15m"
+        elif "ساعة" in timeframe_port:
+            port_yf_period = "730d"
+            port_yf_interval = "1h"
+        else:
+            port_yf_period = "2y"
+            port_yf_interval = "1d"
+
         total_portfolio_cost = 0.0
         total_portfolio_value = 0.0
 
@@ -856,7 +877,7 @@ with tabs[5]:
             sector_name = stock_sectors.get(ticker, "غير محدد")
             index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
 
-            res_live = analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
+            res_live = analyze_stock_cached(ticker, port_yf_period, port_yf_interval, arabic_name, sector_name, index_name)
             if res_live:
                 current_price = res_live['السعر الحالي']
 
