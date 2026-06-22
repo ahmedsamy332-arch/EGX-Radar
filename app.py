@@ -548,7 +548,7 @@ with tabs[0]:
     if selection_method:
         st.subheader("📋 3. إضافة أسهم مخصصة للبحث (اختياري)")
         specific_search_stocks = st.multiselect(
-            "ابحث باسم السهم (عربي) أو الكود (إنجليزي):",
+            "ابحث باسم السهم أو الكود:",
             options=list(stock_names.keys()),
             default=[],
             format_func=format_stock_option
