@@ -659,17 +659,35 @@ with tabs[2]:
 
 with tabs[3]:
     st.subheader("📈 حصاد الجلسة (الأكثر صعوداً وهبوطاً)")
-    st.write("البرنامج هيفحص أداء أسهم EGX100 لليوم الحالي ويطلعلك الأسهم الأكثر ربحاً والأكثر خسارة بنهاية الجلسة.")
     
-    if st.button("📊 ابدأ فحص حصاد الجلسة (فحص سريع)", use_container_width=True):
+    harvest_index_choice = st.radio(
+        "اختر المؤشر لبحث حصاد الجلسة:",
+        ["EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
+        horizontal=True,
+        index=2
+    )
+    
+    if "30" in harvest_index_choice:
+        harvest_list = egx30_list
+        h_idx_name = "EGX30"
+    elif "70" in harvest_index_choice:
+        harvest_list = egx70_list
+        h_idx_name = "EGX70"
+    else:
+        harvest_list = egx100_list
+        h_idx_name = "EGX100"
+
+    st.write(f"البرنامج هيفحص أداء أسهم {h_idx_name} لليوم الحالي ويطلعلك الأسهم الأكثر ربحاً والأكثر خسارة بنهاية الجلسة.")
+    
+    if st.button(f"📊 ابدأ فحص حصاد الجلسة لـ {h_idx_name} (فحص سريع)", use_container_width=True):
         st.cache_data.clear()
         daily_results = []
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        total = len(egx100_list)
+        total = len(harvest_list)
         
-        for i, ticker in enumerate(egx100_list):
+        for i, ticker in enumerate(harvest_list):
             arabic_name = stock_names.get(ticker, "")
             status_text.markdown(f"**⏳ جاري الفحص:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
             
