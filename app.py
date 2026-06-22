@@ -584,6 +584,25 @@ with tabs[2]:
         index=2
     )
     
+    timeframe_sniper = st.radio(
+        "اختر المدى الزمني للبحث عن القيعان:",
+        ["مضاربة لحظية (15 دقيقة) - ارتداد سريع في نفس الجلسة", 
+         "مضاربة قصيرة (ساعة) - ارتداد لسوينجات أيام", 
+         "تداول يومي (شمعة يومية) - قاع رئيسي للسهم"],
+        index=2,
+        key="sniper_timeframe"
+    )
+    
+    if "15 دقيقة" in timeframe_sniper:
+        sniper_yf_period = "60d"
+        sniper_yf_interval = "15m"
+    elif "ساعة" in timeframe_sniper:
+        sniper_yf_period = "730d"
+        sniper_yf_interval = "1h"
+    else:
+        sniper_yf_period = "2y"
+        sniper_yf_interval = "1d"
+    
     if "30" in sniper_index_choice:
         sniper_list = egx30_list
         s_idx_name = "EGX30"
@@ -610,8 +629,8 @@ with tabs[2]:
             sector_name = stock_sectors.get(ticker, "غير محدد")
             index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
             
-            # تحليل يومي لضمان الدقة (استخدام سنتين لضمان حساب البولينجر والـ RSI بدقة)
-            res = analyze_stock_cached(ticker, "2y", "1d", arabic_name, sector_name, index_name)
+            # تحليل حسب المدى الزمني المختار
+            res = analyze_stock_cached(ticker, sniper_yf_period, sniper_yf_interval, arabic_name, sector_name, index_name)
             
             if res:
                 rsi_val = res.get("الزخم (RSI)", 50)
