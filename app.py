@@ -6,8 +6,115 @@ from tvDatafeed import TvDatafeed, Interval
 
 import firebase_client as fb
 
-from analyzer import analyze_stock_cached, get_daily_performance
+from analyzer import analyze_stock_cached, get_daily_performance, get_stock_chart_data
 from data_assets import *
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+
+def render_stock_chart(ticker, yf_period, yf_interval, stock_name=""):
+    """يعرض شارت شموع يابانية تفاعلي مع EMA و Bollinger Bands"""
+    chart_df = get_stock_chart_data(ticker, yf_period, yf_interval)
+    if chart_df is None:
+        st.caption("⚠️ لا تتوفر بيانات كافية لعرض الشارت.")
+        return
+    
+    # آخر 100 شمعة للعرض
+    chart_df = chart_df.tail(100).copy()
+    
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        row_heights=[0.75, 0.25],
+        vertical_spacing=0.03
+    )
+    
+    # 1. Candlestick
+    fig.add_trace(go.Candlestick(
+        x=chart_df.index,
+        open=chart_df['Open'].squeeze(),
+        high=chart_df['High'].squeeze(),
+        low=chart_df['Low'].squeeze(),
+        close=chart_df['Close'].squeeze(),
+        increasing_line_color='#4caf50',
+        decreasing_line_color='#ff5252',
+        increasing_fillcolor='#4caf50',
+        decreasing_fillcolor='#ff5252',
+        name='السعر',
+        showlegend=False
+    ), row=1, col=1)
+    
+    # 2. EMA 9
+    fig.add_trace(go.Scatter(
+        x=chart_df.index, y=chart_df['EMA_9'].squeeze(),
+        line=dict(color='#fd267a', width=1.5),
+        name='EMA 9'
+    ), row=1, col=1)
+    
+    # 3. EMA 21
+    fig.add_trace(go.Scatter(
+        x=chart_df.index, y=chart_df['EMA_21'].squeeze(),
+        line=dict(color='#ff6036', width=1.5),
+        name='EMA 21'
+    ), row=1, col=1)
+    
+    # 4. Bollinger Bands
+    fig.add_trace(go.Scatter(
+        x=chart_df.index, y=chart_df['BB_Upper'].squeeze(),
+        line=dict(color='rgba(255,255,255,0.2)', width=1, dash='dot'),
+        name='BB Upper', showlegend=False
+    ), row=1, col=1)
+    fig.add_trace(go.Scatter(
+        x=chart_df.index, y=chart_df['BB_Lower'].squeeze(),
+        line=dict(color='rgba(255,255,255,0.2)', width=1, dash='dot'),
+        fill='tonexty', fillcolor='rgba(253,38,122,0.05)',
+        name='BB Band', showlegend=True
+    ), row=1, col=1)
+    fig.add_trace(go.Scatter(
+        x=chart_df.index, y=chart_df['BB_Mid'].squeeze(),
+        line=dict(color='rgba(255,255,255,0.15)', width=1, dash='dash'),
+        name='BB Mid', showlegend=False
+    ), row=1, col=1)
+    
+    # 5. Volume
+    vol = chart_df['Volume'].squeeze()
+    close = chart_df['Close'].squeeze()
+    colors = ['#4caf50' if close.iloc[i] >= close.iloc[i-1] else '#ff5252' for i in range(len(close))]
+    colors[0] = '#4caf50'
+    fig.add_trace(go.Bar(
+        x=chart_df.index, y=vol,
+        marker_color=colors, opacity=0.5,
+        name='حجم التداول', showlegend=False
+    ), row=2, col=1)
+    
+    # Volume SMA
+    if 'Vol_SMA' in chart_df.columns:
+        fig.add_trace(go.Scatter(
+            x=chart_df.index, y=chart_df['Vol_SMA'].squeeze(),
+            line=dict(color='#ff6036', width=1),
+            name='متوسط الحجم', showlegend=False
+        ), row=2, col=1)
+    
+    display_name = stock_name if stock_name else ticker.replace('.CA', '')
+    
+    fig.update_layout(
+        title=dict(text=f"📊 {display_name}", font=dict(size=16, color='#e8e8e8')),
+        template='plotly_dark',
+        paper_bgcolor='rgba(17,17,17,0.9)',
+        plot_bgcolor='rgba(26,26,46,0.8)',
+        font=dict(family='Cairo, sans-serif', color='#ccc'),
+        xaxis_rangeslider_visible=False,
+        height=450,
+        margin=dict(l=10, r=10, t=45, b=10),
+        legend=dict(
+            orientation='h', yanchor='bottom', y=1.02,
+            xanchor='right', x=1, font=dict(size=11)
+        ),
+        xaxis2=dict(showgrid=False),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', side='right'),
+        yaxis2=dict(gridcolor='rgba(255,255,255,0.05)', side='right'),
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
 
 
 # 1. إعدادات الصفحة لتناسب الموبايل
@@ -627,6 +734,13 @@ with tabs[0]:
                         res_df.reset_index(drop=True, inplace=True)
                         st.success(f"تم تحديث البيانات بنجاح! إجمالي الأسهم المعروضة: {len(res_df)}")
                         st.dataframe(res_df, use_container_width=True)
+                        
+                        st.markdown("### 📊 عرض الشارت التفاعلي")
+                        chart_options = ["بدون تحديد"] + res_df["اسم السهم"].tolist()
+                        selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab0")
+                        if selected_chart != "بدون تحديد":
+                            row = res_df[res_df["اسم السهم"] == selected_chart].iloc[0]
+                            render_stock_chart(row.get("الكود", ""), yf_period, yf_interval, selected_chart)
                     else:
                         st.warning("لا توجد أسهم تطابق الفلاتر اللي اخترتها. جرب تختار 'عرض الكل'.")
                 else:
@@ -724,6 +838,13 @@ with tabs[1]:
             
             st.subheader("📋 باقي الفرص المتاحة:")
             st.dataframe(golden_df, use_container_width=True)
+            
+            st.markdown("### 📊 عرض الشارت التفاعلي")
+            chart_options = ["بدون تحديد"] + golden_df["اسم السهم"].tolist()
+            selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab1")
+            if selected_chart != "بدون تحديد":
+                row = golden_df[golden_df["اسم السهم"] == selected_chart].iloc[0]
+                render_stock_chart(row.get("الكود", ""), golden_yf_period, golden_yf_interval, selected_chart)
         else:
             st.warning("للأسف مفيش أسهم مطابقة للشروط القوية حالياً. السوق قد يكون سلبي أو في مرحلة هبوط.")
 
@@ -826,6 +947,13 @@ with tabs[2]:
             
             st.subheader("📋 باقي الأسهم في مرحلة القاع:")
             st.dataframe(oversold_df, use_container_width=True)
+            
+            st.markdown("### 📊 عرض الشارت التفاعلي")
+            chart_options = ["بدون تحديد"] + oversold_df["اسم السهم"].tolist()
+            selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab2")
+            if selected_chart != "بدون تحديد":
+                row = oversold_df[oversold_df["اسم السهم"] == selected_chart].iloc[0]
+                render_stock_chart(row.get("الكود", ""), over_yf_period, over_yf_interval, selected_chart)
         else:
             st.warning("لا يوجد أسهم في حالة تشبع بيعي حالياً (السوق في حالة إيجابية غالباً).")
 
@@ -959,6 +1087,13 @@ with tabs[4]:
                 res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
                 res_df.reset_index(drop=True, inplace=True)
                 st.dataframe(res_df, use_container_width=True)
+                
+                st.markdown("### 📊 عرض الشارت التفاعلي")
+                chart_options = ["بدون تحديد"] + res_df["اسم السهم"].tolist()
+                selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab4")
+                if selected_chart != "بدون تحديد":
+                    row = res_df[res_df["اسم السهم"] == selected_chart].iloc[0]
+                    render_stock_chart(row.get("الكود", ""), fav_yf_period, fav_yf_interval, selected_chart)
             else:
                 st.warning("تعذر جلب البيانات للمفضلة.")
 
@@ -1092,6 +1227,9 @@ with tabs[5]:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                with st.expander(f"📊 عرض شارت {arabic_name}"):
+                    render_stock_chart(ticker, port_yf_period, port_yf_interval, f"{ticker.replace('.CA', '')} - {arabic_name}")
 
                 col_b1, col_b2 = st.columns([1, 1])
                 with col_b1:

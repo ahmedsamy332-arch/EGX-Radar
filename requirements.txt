@@ -5,3 +5,4 @@ requests
 extra-streamlit-components
 git+https://github.com/rongardF/tvdatafeed.git
 firebase-admin
+plotly
