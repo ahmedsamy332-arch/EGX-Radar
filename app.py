@@ -934,7 +934,7 @@ with tabs[5]:
                         <span>🛑 وقف الخسارة: {act_sl:.2f}</span>
                     </div>
                     <div style='margin-top:10px; padding:10px; background-color:rgba(255,255,255,0.7); border-radius:8px; font-size:14px; color:#333; border: 1px solid #eee;'>
-                        <b>💡 تقييم السهم فنياً:</b> {res_live.get('التوجيه الحالي', 'غير متوفر')}
+                        <b>💡 التقييم الفني ({tf.split("(")[0].strip()}):</b> {res_live.get('التوجيه الحالي', 'غير متوفر')} <span style='color:#007bff; font-weight:bold;'>(قوة السهم: {res_live.get("قوة التقييم", "")})</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
