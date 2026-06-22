@@ -15,8 +15,14 @@ from data_assets import *
 st.set_page_config(page_title="نسر البورصة المصرية", layout="centered")
 
 # CSS مخصص - تصميم مستوحى من Tinder (داكن + تدرجات نارية)
-st.markdown("""
-<style>
+
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "dark"
+
+def toggle_theme():
+    st.session_state["theme"] = "light" if st.session_state["theme"] == "dark" else "dark"
+
+DARK_THEME_CSS = """
 /* إخفاء زر النشر في الشريط العلوي فقط */
 .stAppDeployButton, [data-testid="stAppDeployButton"] {
     display: none !important;
@@ -256,8 +262,97 @@ section[data-testid="stSidebar"] {
 .stMarkdown div[style] {
     animation: cardSlideUp 0.4s ease-out;
 }
-</style>
-""", unsafe_allow_html=True)
+"""
+
+LIGHT_THEME_CSS = """
+/* إخفاء زر النشر في الشريط العلوي فقط */
+.stAppDeployButton, [data-testid="stAppDeployButton"] { display: none !important; }
+footer {visibility: hidden;}
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
+html, body, [class*="css"] { font-family: 'Cairo', sans-serif !important; }
+
+/* الخلفية الفاتحة الرئيسية */
+.stApp { background: #f0f2f5 !important; }
+
+/* تكبير الخط العام */
+p, label, span, li { font-size: 17px; color: #222 !important; }
+
+/* كلاس مخصص لاسم البرنامج */
+.main-eagle-title {
+    font-size: 52px !important; font-weight: 900 !important;
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
+    -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important;
+    line-height: 1.2 !important; text-shadow: none !important;
+    filter: drop-shadow(0 2px 4px rgba(253, 38, 122, 0.2));
+}
+
+.block-container { direction: rtl; text-align: right; }
+[data-testid="stSidebar"] { direction: rtl; background: #ffffff !important; border-left: 1px solid #e0e0e0; }
+
+p, div, span, h1, h2, h3, h4, h5, h6, label, .stMarkdown, .stText { text-align: right !important; }
+.stMarkdown p, .stText { font-size: 17px; }
+
+h1 {
+    font-size: 32px !important;
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
+    -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important;
+}
+h2 { font-size: 28px !important; color: #d81b60 !important; }
+h3 { font-size: 24px !important; color: #e64a19 !important; }
+h4 { color: #444 !important; }
+
+section[data-testid="stSidebar"] { direction: rtl; text-align: right; }
+
+.stButton>button {
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
+    color: white !important; border: none !important; border-radius: 25px !important;
+    padding: 12px 28px !important; font-weight: 700 !important; font-size: 16px !important;
+    box-shadow: 0 4px 10px rgba(253, 38, 122, 0.2) !important;
+}
+.stButton>button:hover { transform: translateY(-2px) scale(1.02) !important; box-shadow: 0 6px 15px rgba(253, 38, 122, 0.3) !important; }
+
+.stTabs [data-baseweb="tab-list"] { background: rgba(0, 0, 0, 0.05); border-radius: 15px; padding: 5px; gap: 4px; }
+.stTabs [data-baseweb="tab"] { border-radius: 12px !important; padding: 10px 16px !important; color: #555 !important; font-weight: 600 !important; background: transparent !important; }
+.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important; color: white !important; box-shadow: 0 4px 12px rgba(253, 38, 122, 0.2) !important; }
+
+.stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div {
+    background: #ffffff !important; border: 1px solid #ccc !important; border-radius: 12px !important; color: #333 !important;
+}
+.stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus { border-color: #fd267a !important; box-shadow: 0 0 0 2px rgba(253, 38, 122, 0.1) !important; }
+
+.stRadio > div { background: rgba(0, 0, 0, 0.03); border-radius: 12px; padding: 8px !important; }
+.stRadio label span { color: #333 !important; }
+
+.stDataFrame { border-radius: 12px !important; overflow: hidden; background: #ffffff !important; border: 1px solid #e0e0e0; }
+.stDataFrame [data-testid="stDataFrameResizable"] { border: 1px solid #e0e0e0 !important; }
+
+.streamlit-expanderHeader { background: #ffffff !important; border-radius: 12px !important; color: #333 !important; border: 1px solid #e0e0e0 !important; }
+
+[data-testid="stMetric"] { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 14px; padding: 15px !important; }
+[data-testid="stMetric"]:hover { border-color: rgba(253, 38, 122, 0.3); }
+[data-testid="stMetricLabel"] { color: #666 !important; }
+[data-testid="stMetricValue"] { color: #111 !important; }
+
+.stProgress > div > div > div > div { background: linear-gradient(90deg, #fd267a, #ff6036) !important; }
+.stSpinner > div { border-top-color: #fd267a !important; }
+.stAlert { border-radius: 12px !important; border: none !important; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f0f0f0; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #fd267a, #ff6036); border-radius: 3px; }
+"""
+
+selected_css = LIGHT_THEME_CSS if st.session_state["theme"] == "light" else DARK_THEME_CSS
+
+st.markdown(f"<style>{selected_css}</style>", unsafe_allow_html=True)
+
+# Theme Toggle Button
+col_theme1, col_theme2 = st.columns([1, 5])
+with col_theme1:
+    btn_text = "☀️ وضع فاتح" if st.session_state["theme"] == "dark" else "🌙 وضع مظلم"
+    st.button(btn_text, on_click=toggle_theme, use_container_width=True)
+
 
 # عنوان الموقع والإمضاء بتصميم Tinder
 st.markdown("""
@@ -753,7 +848,7 @@ with tabs[1]:
                 <h2 style='margin:0; color: #ff6b6b; text-shadow: none;'>🏆 سهم اليوم (الأعلى تقييماً)</h2>
                 <h1 style='margin:10px 0; color: #fff;'>{top_stock['اسم السهم']}</h1>
                 <h3 style='margin:0; color: #ccc;'>السعر الحالي: {top_stock['السعر']} ج.م | التوجيه: {top_stock['المؤشر اليومي']}</h3>
-                <p style='font-size:18px; margin-top:10px; color:#aaa; font-weight:bold;'>الدخول: {top_stock['الدخول']} | الهدف: {top_stock['الهدف']} | الوقف: {top_stock['وقف الخسارة']}</p>
+                <p style='font-size:18px; margin-top:10px; color:{ "#555" if st.session_state["theme"] == "light" else "#aaa" }; font-weight:bold;'>الدخول: {top_stock['الدخول']} | الهدف: {top_stock['الهدف']} | الوقف: {top_stock['وقف الخسارة']}</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -855,7 +950,7 @@ with tabs[2]:
                 <h2 style='margin:0; color: #4facfe; text-shadow: none;'>🎯 سهم القاع (فرصة قنص)</h2>
                 <h1 style='margin:10px 0; color: #fff;'>{top_stock['اسم السهم']}</h1>
                 <h3 style='margin:0; color: #ccc;'>السعر الحالي: {top_stock['السعر']} ج.م | نسبة التشبع: RSI {top_stock['الزخم (RSI)']}</h3>
-                <p style='font-size:18px; margin-top:10px; color:#aaa; font-weight:bold;'>الدخول: {top_stock['الدخول المقترح']} | الهدف: {top_stock['الهدف الأول']} | الوقف: {top_stock['وقف الخسارة']}</p>
+                <p style='font-size:18px; margin-top:10px; color:{ "#555" if st.session_state["theme"] == "light" else "#aaa" }; font-weight:bold;'>الدخول: {top_stock['الدخول المقترح']} | الهدف: {top_stock['الهدف الأول']} | الوقف: {top_stock['وقف الخسارة']}</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1199,9 +1294,9 @@ with tabs[5]:
                 <div style='background:{card_color}; border:1px solid rgba(255,255,255,0.1); padding:18px; border-radius:16px; margin-bottom:12px; backdrop-filter:blur(10px);'>
                     <div style='display:flex; justify-content:space-between; align-items:center;'>
                         <div>
-                            <h4 style='margin:0;color:#fff;'>{ticker.replace('.CA', '')} {arabic_name} <span style='font-size:11px; color:#aaa; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:20px; margin-right:5px;'>{tf}</span></h4>
+                            <h4 style='margin:0;color:#fff;'>{ticker.replace('.CA', '')} {arabic_name} <span style='font-size:11px; color:{ "#555" if st.session_state["theme"] == "light" else "#aaa" }; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:20px; margin-right:5px;'>{tf}</span></h4>
                             <span style='font-size:14px;color:#999;'>متوسط السعر: {buy_price} | الكمية: {qty} سهم | الإجمالي: {stock_cost:,.0f} ج</span><br>
-                            <span style='font-size:14px;color:#ccc;'>السعر الحالي: <b style='color:#fff;'>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
+                            <span style='font-size:14px;color:{ "#333" if st.session_state["theme"] == "light" else "#ccc" };'>السعر الحالي: <b style='color:#fff;'>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
                         </div>
                         <div style='text-align:right;'>
                             <h3 style='margin:0;color:{pnl_color};'>{pnl_money_str}</h3>
@@ -1214,7 +1309,7 @@ with tabs[5]:
                         <span>🎯 الهدف المقترح: {tp_val:.2f}</span>
                         <span>🛑 وقف الخسارة: {act_sl:.2f}</span>
                     </div>
-                    <div style='margin-top:10px; padding:10px; background:rgba(253,38,122,0.08); border-radius:10px; font-size:14px; color:#ccc; border: 1px solid rgba(253,38,122,0.2);'>
+                    <div style='margin-top:10px; padding:10px; background:rgba(253,38,122,0.08); border-radius:10px; font-size:14px; color:{ "#333" if st.session_state["theme"] == "light" else "#ccc" }; border: 1px solid rgba(253,38,122,0.2);'>
                         <b style='color:#ff6b6b;'>💡 التقييم الفني ({tf.split("(")[0].strip()}):</b> {res_live.get('التوجيه الحالي', 'غير متوفر')} <span style='color:#fd267a; font-weight:bold;'>(قوة السهم: {res_live.get("قوة التقييم", "")})</span>
                     </div>
                 </div>
