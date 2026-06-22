@@ -407,9 +407,16 @@ with tabs[0]:
         )
 
         st.subheader("🔎 4. فلاتر العرض السريعة")
-        filter_signal = st.selectbox("تصفية حسب الإشارة:", ["عرض الكل", "فرص الشراء فقط", "الأسهم السلبية فقط"], index=None)
+        filter_col1, filter_col2, filter_col3 = st.columns(3)
+        with filter_col1:
+            filter_signal = st.selectbox("تصفية حسب الإشارة:", ["عرض الكل", "فرص الشراء فقط", "الأسهم السلبية فقط"], index=0)
+        with filter_col2:
+            all_sectors = ["عرض الكل"] + sorted(list(set([s for s in stock_sectors.values() if s != "غير محدد"])))
+            filter_sector = st.selectbox("تصفية حسب القطاع:", all_sectors, index=0)
+        with filter_col3:
+            filter_liquidity = st.selectbox("تصفية حسب السيولة:", ["عرض الكل", "T+0 فقط (أعلى سيولة)", "استبعاد السيولة الضعيفة", "سيولة انفجارية 🔥"], index=0)
 
-        if filter_signal:
+        if True:
             selected_stocks = list(specific_search_stocks)
 
             if selection_method == "فحص قائمتي المفضلة":
@@ -458,6 +465,16 @@ with tabs[0]:
                         res_df = res_df[res_df["Score"] >= 1]
                     elif filter_signal == "الأسهم السلبية فقط":
                         res_df = res_df[res_df["Score"] < 0]
+                        
+                    if filter_sector != "عرض الكل":
+                        res_df = res_df[res_df["القطاع"] == filter_sector]
+                        
+                    if filter_liquidity == "T+0 فقط (أعلى سيولة)":
+                        res_df = res_df[res_df["نظام التسوية"].str.contains(r"T\+0")]
+                    elif filter_liquidity == "استبعاد السيولة الضعيفة":
+                        res_df = res_df[~res_df["نظام التسوية"].str.contains(r"T\+2")]
+                    elif filter_liquidity == "سيولة انفجارية 🔥":
+                        res_df = res_df[res_df["السيولة"].str.contains("انفجار|عالية")]
 
                     if not res_df.empty:
                         res_df = res_df.sort_values(by=["Score", "اسم السهم"], ascending=[False, True]).drop(columns=["Score"])
