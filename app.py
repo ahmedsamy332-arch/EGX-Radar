@@ -13,7 +13,7 @@ from data_assets import *
 # 1. إعدادات الصفحة لتناسب الموبايل
 st.set_page_config(page_title="نسر البورصة المصرية", layout="centered")
 
-# CSS مخصص لتحسين الخطوط والأنيميشن
+# CSS مخصص - تصميم مستوحى من Tinder (داكن + تدرجات نارية)
 st.markdown("""
 <style>
 /* إخفاء زر النشر في الشريط العلوي فقط */
@@ -21,24 +21,38 @@ st.markdown("""
     display: none !important;
 }
 footer {visibility: hidden;}
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
+/* === TINDER DARK THEME === */
 html, body, [class*="css"] {
     font-family: 'Cairo', sans-serif !important;
 }
-/* تكبير الخط العام بدون استخدام !important اللي بتبوظ التصميمات المخصصة */
-p, label, span, li {
-    font-size: 18px;
-}
-/* كلاس مخصص لاسم البرنامج عشان نكبره براحتنا */
-.main-eagle-title {
-    font-size: 48px !important;
-    font-weight: 900 !important;
-    color: #1e3c72 !important;
-    line-height: 1.2 !important;
+
+/* الخلفية الداكنة الرئيسية */
+.stApp {
+    background: linear-gradient(180deg, #111111 0%, #1a1a2e 50%, #16213e 100%) !important;
 }
 
-/* قلب اتجاه المحتوى من اليمين لليسار باستخدام الكلاسات الأساسية لستريمليت */
+/* تكبير الخط العام */
+p, label, span, li {
+    font-size: 17px;
+    color: #e8e8e8 !important;
+}
+
+/* كلاس مخصص لاسم البرنامج */
+.main-eagle-title {
+    font-size: 52px !important;
+    font-weight: 900 !important;
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    line-height: 1.2 !important;
+    text-shadow: none !important;
+    filter: drop-shadow(0 2px 8px rgba(253, 38, 122, 0.3));
+}
+
+/* قلب اتجاه المحتوى من اليمين لليسار */
 .block-container {
     direction: rtl;
     text-align: right;
@@ -46,6 +60,7 @@ p, label, span, li {
 
 [data-testid="stSidebar"] {
     direction: rtl;
+    background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%) !important;
 }
 
 /* محاذاة كل النصوص لليمين */
@@ -53,14 +68,36 @@ p, div, span, h1, h2, h3, h4, h5, h6, label, .stMarkdown, .stText {
     text-align: right !important;
 }
 
-/* تكبير حجم الخطوط للعناصر النصية فقط بدون التأثير على التصميمات المخصصة */
+/* تكبير حجم الخطوط للعناصر النصية */
 .stMarkdown p, .stText {
-    font-size: 18px;
+    font-size: 17px;
 }
 
-h1 { font-size: 32px !important; }
-h2 { font-size: 28px !important; }
-h3 { font-size: 24px !important; }
+/* العناوين بتدرج ناري */
+h1 {
+    font-size: 32px !important;
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    animation: slideDown 0.6s ease-out;
+}
+h2 {
+    font-size: 28px !important;
+    color: #ff6b6b !important;
+}
+h3 {
+    font-size: 24px !important;
+    color: #ffa07a !important;
+}
+h4 {
+    color: #e0e0e0 !important;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 /* قلب اتجاه القائمة الجانبية */
 section[data-testid="stSidebar"] {
@@ -68,48 +105,165 @@ section[data-testid="stSidebar"] {
     text-align: right;
 }
 
-/* Button styling & animation */
+/* === BUTTON STYLING (TINDER GRADIENT) === */
 .stButton>button {
-    background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%) !important;
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
     color: white !important;
     border: none !important;
-    border-radius: 8px !important;
-    padding: 10px 24px !important;
+    border-radius: 25px !important;
+    padding: 12px 28px !important;
     font-weight: 700 !important;
-    transition: all 0.3s ease !important;
+    font-size: 16px !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 4px 15px rgba(253, 38, 122, 0.3) !important;
+    letter-spacing: 0.5px !important;
 }
 .stButton>button:hover {
-    transform: translateY(-2px) scale(1.02) !important;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3) !important;
+    transform: translateY(-3px) scale(1.03) !important;
+    box-shadow: 0 8px 25px rgba(253, 38, 122, 0.5) !important;
+    filter: brightness(1.1) !important;
+}
+.stButton>button:active {
+    transform: scale(0.97) !important;
 }
 
-/* Title styling */
-h1 {
-    color: #1e3c72 !important;
-    animation: slideDown 0.6s ease-out;
+/* === TABS (TINDER STYLE) === */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 5px;
 }
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+.stTabs [data-baseweb="tab"] {
+    border-radius: 12px !important;
+    padding: 10px 16px !important;
+    color: #aaa !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    background: transparent !important;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(253, 38, 122, 0.4) !important;
 }
 
-/* Fade in for the tables and elements */
+/* === INPUT FIELDS === */
+.stTextInput>div>div>input,
+.stNumberInput>div>div>input,
+.stSelectbox>div>div {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 12px !important;
+    color: #e8e8e8 !important;
+    transition: border-color 0.3s ease !important;
+}
+.stTextInput>div>div>input:focus,
+.stNumberInput>div>div>input:focus {
+    border-color: #fd267a !important;
+    box-shadow: 0 0 0 2px rgba(253, 38, 122, 0.2) !important;
+}
+
+/* === RADIO BUTTONS === */
+.stRadio > div {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 8px !important;
+}
+.stRadio label span {
+    color: #ccc !important;
+}
+
+/* === DATAFRAME/TABLE === */
 .stDataFrame {
     animation: fadeIn 0.8s ease-in-out;
+    border-radius: 12px !important;
+    overflow: hidden;
 }
+.stDataFrame [data-testid="stDataFrameResizable"] {
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 12px !important;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* === EXPANDER === */
+.streamlit-expanderHeader {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    color: #e8e8e8 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* === METRICS === */
+[data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 15px !important;
+    transition: transform 0.2s ease;
+}
+[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    border-color: rgba(253, 38, 122, 0.3);
+}
+[data-testid="stMetricLabel"] {
+    color: #aaa !important;
+}
+[data-testid="stMetricValue"] {
+    color: #fff !important;
+    font-weight: 700 !important;
+}
+
+/* === PROGRESS BAR === */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #fd267a, #ff6036) !important;
+    border-radius: 10px !important;
+}
+
+/* === SPINNER === */
+.stSpinner > div {
+    border-top-color: #fd267a !important;
+}
+
+/* === ALERTS/SUCCESS/ERROR === */
+.stAlert {
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #fd267a, #ff6036);
+    border-radius: 3px;
+}
+
+/* === CARD ANIMATION === */
+@keyframes cardSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.stMarkdown div[style] {
+    animation: cardSlideUp 0.4s ease-out;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# عنوان الموقع والإمضاء بتصميم متناسق مع حجم الخطوط
+# عنوان الموقع والإمضاء بتصميم Tinder
 st.markdown("""
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: -30px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e6e6e6; width: 100%;">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: -30px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); width: 100%;">
     <div class="main-eagle-title" style="margin: 0; padding: 0; text-align: center;">🦅 نسر البورصة</div>
-    <div style="font-size: 16px !important; color: #666; font-weight: bold; font-family: sans-serif; margin-top: 10px; text-align: center;">
-        <span style="font-weight: normal; color: #888;">By</span> <span style="color: #0056b3;">AHMED SAMY</span>
+    <div style="font-size: 14px !important; color: #888; font-weight: 600; font-family: 'Cairo', sans-serif; margin-top: 10px; text-align: center;">
+        <span style="font-weight: normal; color: #666;">By</span> <span style="background: linear-gradient(135deg, #fd267a, #ff6036); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AHMED SAMY</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -146,7 +300,7 @@ if st.session_state["user"] is None and saved_token and isinstance(saved_token, 
 
 # شاشة تسجيل الدخول / إنشاء حساب
 if st.session_state["user"] is None:
-    st.markdown("<h2 style='text-align: center; color: #1e3c72;'>🔐 تسجيل الدخول للرادار</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #ff6b6b;'>🔐 تسجيل الدخول للرادار</h2>", unsafe_allow_html=True)
     st.write("برجاء تسجيل الدخول للوصول لمحفظتك ومفضلاتك. إذا لم تكن تمتلك حساباً، أدخل إيميل وكلمة مرور واضغط على إنشاء حساب جديد.")
     
     auth_col1, auth_col2, auth_col3 = st.columns([1,2,1])
@@ -560,11 +714,11 @@ with tabs[1]:
             # عرض أفضل سهم ككارت تعريفي
             top_stock = golden_df.iloc[0]
             st.markdown(f"""
-            <div style='background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                <h2 style='margin:0; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>🏆 سهم اليوم (الأعلى تقييماً)</h2>
-                <h1 style='margin:10px 0; color: #1e3c72;'>{top_stock['اسم السهم']}</h1>
-                <h3 style='margin:0; color: #fff;'>السعر الحالي: {top_stock['السعر']} ج.م | التوجيه: {top_stock['المؤشر اليومي']}</h3>
-                <p style='font-size:18px; margin-top:10px; color:#333; font-weight:bold;'>الدخول: {top_stock['الدخول']} | الهدف: {top_stock['الهدف']} | الوقف: {top_stock['وقف الخسارة']}</p>
+            <div style='background: linear-gradient(135deg, rgba(253,38,122,0.15) 0%, rgba(255,96,54,0.15) 100%); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 20px rgba(253,38,122,0.2); border: 1px solid rgba(253,38,122,0.3);'>
+                <h2 style='margin:0; color: #ff6b6b; text-shadow: none;'>🏆 سهم اليوم (الأعلى تقييماً)</h2>
+                <h1 style='margin:10px 0; color: #fff;'>{top_stock['اسم السهم']}</h1>
+                <h3 style='margin:0; color: #ccc;'>السعر الحالي: {top_stock['السعر']} ج.م | التوجيه: {top_stock['المؤشر اليومي']}</h3>
+                <p style='font-size:18px; margin-top:10px; color:#aaa; font-weight:bold;'>الدخول: {top_stock['الدخول']} | الهدف: {top_stock['الهدف']} | الوقف: {top_stock['وقف الخسارة']}</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -662,11 +816,11 @@ with tabs[2]:
             # عرض أفضل سهم ارتدادي (أقل RSI)
             top_stock = oversold_df.iloc[0]
             st.markdown(f"""
-            <div style='background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                <h2 style='margin:0; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>🎯 سهم القاع (فرصة قنص)</h2>
-                <h1 style='margin:10px 0; color: #4facfe;'>{top_stock['اسم السهم']}</h1>
-                <h3 style='margin:0; color: #fff;'>السعر الحالي: {top_stock['السعر']} ج.م | نسبة التشبع: RSI {top_stock['الزخم (RSI)']}</h3>
-                <p style='font-size:18px; margin-top:10px; color:#ddd; font-weight:bold;'>الدخول: {top_stock['الدخول المقترح']} | الهدف: {top_stock['الهدف الأول']} | الوقف: {top_stock['وقف الخسارة']}</p>
+            <div style='background: linear-gradient(135deg, rgba(79,172,254,0.12) 0%, rgba(0,242,254,0.08) 100%); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 20px rgba(79,172,254,0.15); border: 1px solid rgba(79,172,254,0.3);'>
+                <h2 style='margin:0; color: #4facfe; text-shadow: none;'>🎯 سهم القاع (فرصة قنص)</h2>
+                <h1 style='margin:10px 0; color: #fff;'>{top_stock['اسم السهم']}</h1>
+                <h3 style='margin:0; color: #ccc;'>السعر الحالي: {top_stock['السعر']} ج.م | نسبة التشبع: RSI {top_stock['الزخم (RSI)']}</h3>
+                <p style='font-size:18px; margin-top:10px; color:#aaa; font-weight:bold;'>الدخول: {top_stock['الدخول المقترح']} | الهدف: {top_stock['الهدف الأول']} | الوقف: {top_stock['وقف الخسارة']}</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -732,12 +886,12 @@ with tabs[3]:
             col_gain, col_lose = st.columns(2)
             
             with col_gain:
-                st.markdown("<h3 style='text-align: center; color: #28a745;'>🟢 الأكثر صعوداً (Top Gainers)</h3>", unsafe_allow_html=True)
-                st.dataframe(top_gainers.style.map(lambda x: 'color: #28a745; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
+                st.markdown("<h3 style='text-align: center; color: #4caf50;'>🟢 الأكثر صعوداً (Top Gainers)</h3>", unsafe_allow_html=True)
+                st.dataframe(top_gainers.style.map(lambda x: 'color: #4caf50; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
                 
             with col_lose:
-                st.markdown("<h3 style='text-align: center; color: #dc3545;'>🔴 الأكثر هبوطاً (Top Losers)</h3>", unsafe_allow_html=True)
-                st.dataframe(top_losers.style.map(lambda x: 'color: #dc3545; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
+                st.markdown("<h3 style='text-align: center; color: #ff5252;'>🔴 الأكثر هبوطاً (Top Losers)</h3>", unsafe_allow_html=True)
+                st.dataframe(top_losers.style.map(lambda x: 'color: #ff5252; font-weight: bold;', subset=['التغير (%)']), use_container_width=True)
         else:
             st.warning("عفواً، لا توجد بيانات متاحة حالياً.")
 
@@ -898,43 +1052,43 @@ with tabs[5]:
 
                 if current_price <= sl_val or pnl_perc <= -5.0:
                     action = "🛑 فعل وقف الخسارة!"
-                    card_color = "rgba(255, 235, 238, 0.5)"
+                    card_color = "rgba(220, 53, 69, 0.15)"
                 elif current_price >= tp_val:
                     action = "🎯 جني أرباح!"
-                    card_color = "rgba(232, 245, 233, 0.5)"
+                    card_color = "rgba(40, 167, 69, 0.15)"
                 else:
                     if pnl_perc > 0:
                         action = "🛡️ احتفاظ (ربح)"
-                        card_color = "rgba(240, 253, 244, 0.5)"
+                        card_color = "rgba(40, 167, 69, 0.08)"
                     else:
                         action = "⏳ احتفاظ (انتظار)"
-                        card_color = "rgba(255, 251, 235, 0.5)"
+                        card_color = "rgba(255, 193, 7, 0.1)"
 
                 pnl_perc_str = f"+{pnl_perc:.1f}%" if pnl_perc > 0 else f"{pnl_perc:.1f}%"
                 pnl_money_str = f"+{pnl_money:.2f} EGP" if pnl_money > 0 else f"{pnl_money:.2f} EGP"
-                pnl_color = "#28a745" if pnl_perc > 0 else "#dc3545"
+                pnl_color = "#4caf50" if pnl_perc > 0 else "#ff5252"
 
                 st.markdown(f"""
-                <div style='background:{card_color}; border:1px solid #ddd; padding:15px; border-radius:10px; margin-bottom:10px;'>
+                <div style='background:{card_color}; border:1px solid rgba(255,255,255,0.1); padding:18px; border-radius:16px; margin-bottom:12px; backdrop-filter:blur(10px);'>
                     <div style='display:flex; justify-content:space-between; align-items:center;'>
                         <div>
-                            <h4 style='margin:0;color:#1e3c72;'>{ticker.replace('.CA', '')} {arabic_name} <span style='font-size:12px; color:#888; background:#eee; padding:2px 6px; border-radius:4px; margin-right:5px;'>{tf}</span></h4>
-                            <span style='font-size:14px;color:#555;'>متوسط السعر: {buy_price} | الكمية: {qty} سهم | الإجمالي: {stock_cost:,.0f} ج</span><br>
-                            <span style='font-size:14px;color:#111;'>السعر الحالي: <b>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
+                            <h4 style='margin:0;color:#fff;'>{ticker.replace('.CA', '')} {arabic_name} <span style='font-size:11px; color:#aaa; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:20px; margin-right:5px;'>{tf}</span></h4>
+                            <span style='font-size:14px;color:#999;'>متوسط السعر: {buy_price} | الكمية: {qty} سهم | الإجمالي: {stock_cost:,.0f} ج</span><br>
+                            <span style='font-size:14px;color:#ccc;'>السعر الحالي: <b style='color:#fff;'>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
                         </div>
                         <div style='text-align:right;'>
                             <h3 style='margin:0;color:{pnl_color};'>{pnl_money_str}</h3>
                             <h4 style='margin:0;color:{pnl_color};'>{pnl_perc_str}</h4>
-                            <span style='font-size:14px;font-weight:bold;'>{action}</span>
+                            <span style='font-size:14px;font-weight:bold;color:#ddd;'>{action}</span>
                         </div>
                     </div>
-                    <hr style='margin:8px 0;'/>
-                    <div style='font-size:13px; color:#666; display:flex; justify-content:space-between;'>
+                    <hr style='margin:8px 0; border-color:rgba(255,255,255,0.1);'/>
+                    <div style='font-size:13px; color:#999; display:flex; justify-content:space-between;'>
                         <span>🎯 الهدف المقترح: {tp_val:.2f}</span>
                         <span>🛑 وقف الخسارة: {act_sl:.2f}</span>
                     </div>
-                    <div style='margin-top:10px; padding:10px; background-color:rgba(255,255,255,0.7); border-radius:8px; font-size:14px; color:#333; border: 1px solid #eee;'>
-                        <b>💡 التقييم الفني ({tf.split("(")[0].strip()}):</b> {res_live.get('التوجيه الحالي', 'غير متوفر')} <span style='color:#007bff; font-weight:bold;'>(قوة السهم: {res_live.get("قوة التقييم", "")})</span>
+                    <div style='margin-top:10px; padding:10px; background:rgba(253,38,122,0.08); border-radius:10px; font-size:14px; color:#ccc; border: 1px solid rgba(253,38,122,0.2);'>
+                        <b style='color:#ff6b6b;'>💡 التقييم الفني ({tf.split("(")[0].strip()}):</b> {res_live.get('التوجيه الحالي', 'غير متوفر')} <span style='color:#fd267a; font-weight:bold;'>(قوة السهم: {res_live.get("قوة التقييم", "")})</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -969,10 +1123,10 @@ with tabs[5]:
         if total_portfolio_cost > 0:
             tot_pnl = total_portfolio_value - total_portfolio_cost
             tot_perc = (tot_pnl / total_portfolio_cost) * 100
-            t_color = "#28a745" if tot_pnl > 0 else "#dc3545"
+            t_color = "#4caf50" if tot_pnl > 0 else "#ff5252"
             st.markdown(f"""
-            <div style='background:#f8f9fa; border:2px solid #ccc; padding:15px; border-radius:10px; text-align:center;'>
-                <h3 style='margin:0;'>إجمالي المحفظة: <span style='color:#0056b3;'>{total_portfolio_value:,.0f} ج.م</span></h3>
+            <div style='background: linear-gradient(135deg, rgba(253,38,122,0.1) 0%, rgba(255,96,54,0.08) 100%); border:1px solid rgba(253,38,122,0.3); padding:18px; border-radius:16px; text-align:center;'>
+                <h3 style='margin:0; color:#eee;'>إجمالي المحفظة: <span style='background: linear-gradient(135deg, #fd267a, #ff6036); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>{total_portfolio_value:,.0f} ج.م</span></h3>
                 <h4 style='color:{t_color}; margin:5px 0 0 0;'>الأرباح/الخسائر: {tot_pnl:,.0f} ج.م ({tot_perc:,.1f}%)</h4>
             </div>
             """, unsafe_allow_html=True)

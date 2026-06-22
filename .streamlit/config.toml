@@ -1,2 +1,10 @@
 [client]
 toolbarMode = "viewer"
+
+[theme]
+base = "dark"
+primaryColor = "#fd267a"
+backgroundColor = "#111111"
+secondaryBackgroundColor = "#1a1a2e"
+textColor = "#e8e8e8"
+font = "sans serif"
