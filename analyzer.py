@@ -246,7 +246,9 @@ def get_stock_chart_data(ticker, yf_period, yf_interval):
     if df.empty:
         import yfinance as yf
         df = yf.download(ticker, period=yf_period, interval=yf_interval, progress=False, auto_adjust=True)
-        
+        if not df.empty and isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.droplevel(1)
+            
     if df.empty or len(df) < 20:
         return None
         
