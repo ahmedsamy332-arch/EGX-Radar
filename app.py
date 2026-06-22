@@ -739,8 +739,9 @@ with tabs[0]:
                         chart_options = ["بدون تحديد"] + res_df["اسم السهم"].tolist()
                         selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab0")
                         if selected_chart != "بدون تحديد":
-                            row = res_df[res_df["اسم السهم"] == selected_chart].iloc[0]
-                            render_stock_chart(row.get("الكود", ""), yf_period, yf_interval, selected_chart)
+                            extracted_ticker = selected_chart.split(" - ")[0].strip()
+                            if not extracted_ticker.endswith('.CA'): extracted_ticker += '.CA'
+                            render_stock_chart(extracted_ticker, yf_period, yf_interval, selected_chart)
                     else:
                         st.warning("لا توجد أسهم تطابق الفلاتر اللي اخترتها. جرب تختار 'عرض الكل'.")
                 else:
@@ -843,8 +844,9 @@ with tabs[1]:
             chart_options = ["بدون تحديد"] + golden_df["اسم السهم"].tolist()
             selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab1")
             if selected_chart != "بدون تحديد":
-                row = golden_df[golden_df["اسم السهم"] == selected_chart].iloc[0]
-                render_stock_chart(row.get("الكود", ""), golden_yf_period, golden_yf_interval, selected_chart)
+                extracted_ticker = selected_chart.split(" - ")[0].strip()
+                if not extracted_ticker.endswith('.CA'): extracted_ticker += '.CA'
+                render_stock_chart(extracted_ticker, golden_yf_period, golden_yf_interval, selected_chart)
         else:
             st.warning("للأسف مفيش أسهم مطابقة للشروط القوية حالياً. السوق قد يكون سلبي أو في مرحلة هبوط.")
 
@@ -952,8 +954,9 @@ with tabs[2]:
             chart_options = ["بدون تحديد"] + oversold_df["اسم السهم"].tolist()
             selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab2")
             if selected_chart != "بدون تحديد":
-                row = oversold_df[oversold_df["اسم السهم"] == selected_chart].iloc[0]
-                render_stock_chart(row.get("الكود", ""), over_yf_period, over_yf_interval, selected_chart)
+                extracted_ticker = selected_chart.split(" - ")[0].strip()
+                if not extracted_ticker.endswith('.CA'): extracted_ticker += '.CA'
+                render_stock_chart(extracted_ticker, over_yf_period, over_yf_interval, selected_chart)
         else:
             st.warning("لا يوجد أسهم في حالة تشبع بيعي حالياً (السوق في حالة إيجابية غالباً).")
 
@@ -1092,8 +1095,9 @@ with tabs[4]:
                 chart_options = ["بدون تحديد"] + res_df["اسم السهم"].tolist()
                 selected_chart = st.selectbox("اختر سهم لعرض الشارت الخاص به:", chart_options, key="chart_tab4")
                 if selected_chart != "بدون تحديد":
-                    row = res_df[res_df["اسم السهم"] == selected_chart].iloc[0]
-                    render_stock_chart(row.get("الكود", ""), fav_yf_period, fav_yf_interval, selected_chart)
+                    extracted_ticker = selected_chart.split(" - ")[0].strip()
+                    if not extracted_ticker.endswith('.CA'): extracted_ticker += '.CA'
+                    render_stock_chart(extracted_ticker, fav_yf_period, fav_yf_interval, selected_chart)
             else:
                 st.warning("تعذر جلب البيانات للمفضلة.")
 
