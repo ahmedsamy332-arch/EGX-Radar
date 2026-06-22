@@ -386,7 +386,7 @@ with tabs[0]:
     st.subheader("📋 2. طريقة اختيار الأسهم للمراقبة")
     selection_method = st.radio(
         "هل ترغب في فحص مجموعات أو مؤشرات؟",
-        ["لا أريد (سأكتفي بأسهم السيرش فقط)", "فحص قائمتي المفضلة", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)"],
+        ["لا أريد (سأكتفي بأسهم السيرش فقط)", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)"],
         horizontal=True,
         index=None
     )
@@ -413,9 +413,7 @@ with tabs[0]:
         if True:
             selected_stocks = list(specific_search_stocks)
 
-            if selection_method == "فحص قائمتي المفضلة":
-                selected_stocks.extend(favorites_list)
-            elif selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
+            if selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
                 pass
             else:
                 if "EGX30" in selection_method:
