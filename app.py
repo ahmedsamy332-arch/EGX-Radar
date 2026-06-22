@@ -483,24 +483,42 @@ with tabs[0]:
 
 with tabs[1]:
     st.subheader("🔥 الفرص الذهبية (اقتراحات الذكاء الاصطناعي)")
-    st.write("البرنامج هيفحص أسهم EGX30 على المدى (اليومي + اللحظي) وهيرشحلك الأسهم اللي فيها إشارة شراء قوية واتجاه صاعد متطابق.")
     
-    if st.button("🔍 ابدأ فحص الفرص الذهبية (يستغرق دقيقتين)", use_container_width=True):
+    golden_index_choice = st.radio(
+        "اختر المؤشر للبحث عن الفرص الذهبية:",
+        ["EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
+        horizontal=True
+    )
+    
+    if "30" in golden_index_choice:
+        golden_list = egx30_list
+        g_idx_name = "EGX30"
+    elif "70" in golden_index_choice:
+        golden_list = egx70_list
+        g_idx_name = "EGX70"
+    else:
+        golden_list = egx100_list
+        g_idx_name = "EGX100"
+        
+    st.write(f"البرنامج هيفحص أسهم {g_idx_name} على المدى (اليومي + اللحظي) وهيرشحلك الأسهم اللي فيها إشارة شراء قوية واتجاه صاعد متطابق.")
+    
+    if st.button(f"🔍 ابدأ فحص الفرص الذهبية في {g_idx_name}", use_container_width=True):
         st.cache_data.clear()
         golden_results = []
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        total = len(egx30_list)
-        for i, ticker in enumerate(egx30_list):
+        total = len(golden_list)
+        for i, ticker in enumerate(golden_list):
             arabic_name = stock_names.get(ticker, "")
             status_text.markdown(f"**⏳ جاري فحص وتحليل:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
             sector_name = stock_sectors.get(ticker, "غير محدد")
+            curr_index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "EGX100")
             
             # تحليل يومي
-            res_1d = analyze_stock_cached(ticker, "2y", "1d", arabic_name, sector_name, "EGX30")
+            res_1d = analyze_stock_cached(ticker, "2y", "1d", arabic_name, sector_name, curr_index_name)
             # تحليل ساعة
-            res_1h = analyze_stock_cached(ticker, "60d", "1h", arabic_name, sector_name, "EGX30")
+            res_1h = analyze_stock_cached(ticker, "60d", "1h", arabic_name, sector_name, curr_index_name)
             
             if res_1d and res_1h:
                 score_1d = res_1d.get("Score", 0)
@@ -531,8 +549,15 @@ with tabs[1]:
             # ترتيب الفرص بناء على قوة الإشارات
             golden_df = pd.DataFrame(golden_results)
             golden_df["Total_Score"] = golden_df["Score_1d"] + golden_df["Score_1h"]
-            golden_df = golden_df.sort_values(by="Total_Score", ascending=False).drop(columns=["Score_1d", "Score_1h", "Total_Score"])
+            golden_df = golden_df.sort_values(by="Total_Score", ascending=False)
+            golden_df["قوة الإشارة"] = golden_df["Total_Score"].apply(lambda x: f"{int((x/12)*100)}%")
+            golden_df = golden_df.drop(columns=["Score_1d", "Score_1h", "Total_Score"])
             golden_df.reset_index(drop=True, inplace=True)
+            
+            # ترتيب الأعمدة ليكون قوة الإشارة واضحاً
+            cols = list(golden_df.columns)
+            cols.insert(1, cols.pop(cols.index('قوة الإشارة')))
+            golden_df = golden_df[cols]
             
             # عرض أفضل سهم ككارت تعريفي
             top_stock = golden_df.iloc[0]
