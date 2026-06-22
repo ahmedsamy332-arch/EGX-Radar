@@ -817,6 +817,7 @@ with tabs[5]:
     col_p1, col_p2, col_p3, col_p4 = st.columns([2, 1, 1, 1])
     with col_p1:
         new_p_ticker = st.selectbox("اختر السهم للإضافة:", options=[""] + list(stock_names.keys()), format_func=lambda x: f"{x.replace('.CA', '')} - {stock_names[x]}" if x else "اختر سهم...")
+        new_p_tf = st.selectbox("المدى الزمني:", ["مضاربة لحظية (15 دقيقة)", "مضاربة قصيرة (ساعة)", "تداول يومي (شمعة يومية)"], index=2)
     with col_p2:
         new_p_price = st.number_input("متوسط السعر:", min_value=0.0, format="%.3f")
     with col_p3:
@@ -831,9 +832,10 @@ with tabs[5]:
                     if p["ticker"] == new_p_ticker:
                         p["buy_price"] = new_p_price
                         p["qty"] = new_p_qty
+                        p["timeframe"] = new_p_tf
                         exists = True
                 if not exists:
-                    portfolio_list.append({"ticker": new_p_ticker, "buy_price": new_p_price, "qty": new_p_qty})
+                    portfolio_list.append({"ticker": new_p_ticker, "buy_price": new_p_price, "qty": new_p_qty, "timeframe": new_p_tf})
 
                 st.session_state["user_data"]["portfolio"] = portfolio_list
                 try:
@@ -844,27 +846,6 @@ with tabs[5]:
 
     if portfolio_list:
         st.write("📊 **تفاصيل المحفظة:**")
-        
-        timeframe_port = st.radio(
-            "اختر المدى الزمني لتقييم المحفظة:",
-            ["مضاربة لحظية (15 دقيقة)", 
-             "مضاربة قصيرة (ساعة)", 
-             "تداول يومي (شمعة يومية)"],
-            index=2,
-            key="port_timeframe",
-            horizontal=True
-        )
-        
-        if "15 دقيقة" in timeframe_port:
-            port_yf_period = "60d"
-            port_yf_interval = "15m"
-        elif "ساعة" in timeframe_port:
-            port_yf_period = "730d"
-            port_yf_interval = "1h"
-        else:
-            port_yf_period = "2y"
-            port_yf_interval = "1d"
-
         total_portfolio_cost = 0.0
         total_portfolio_value = 0.0
 
@@ -872,6 +853,17 @@ with tabs[5]:
             ticker = p["ticker"]
             buy_price = float(p["buy_price"])
             qty = int(p.get("qty", 1))  # Fallback for old data
+            tf = p.get("timeframe", "تداول يومي (شمعة يومية)")
+
+            if "15" in tf:
+                port_yf_period = "60d"
+                port_yf_interval = "15m"
+            elif "ساعة" in tf:
+                port_yf_period = "730d"
+                port_yf_interval = "1h"
+            else:
+                port_yf_period = "2y"
+                port_yf_interval = "1d"
 
             arabic_name = stock_names.get(ticker, "")
             sector_name = stock_sectors.get(ticker, "غير محدد")
@@ -926,7 +918,7 @@ with tabs[5]:
                 <div style='background:{card_color}; border:1px solid #ddd; padding:15px; border-radius:10px; margin-bottom:10px;'>
                     <div style='display:flex; justify-content:space-between; align-items:center;'>
                         <div>
-                            <h4 style='margin:0;color:#1e3c72;'>{ticker.replace('.CA', '')} {arabic_name}</h4>
+                            <h4 style='margin:0;color:#1e3c72;'>{ticker.replace('.CA', '')} {arabic_name} <span style='font-size:12px; color:#888; background:#eee; padding:2px 6px; border-radius:4px; margin-right:5px;'>{tf}</span></h4>
                             <span style='font-size:14px;color:#555;'>متوسط السعر: {buy_price} | الكمية: {qty} سهم | الإجمالي: {stock_cost:,.0f} ج</span><br>
                             <span style='font-size:14px;color:#111;'>السعر الحالي: <b>{current_price}</b> | القيمة الحالية: {stock_value:,.0f} ج</span>
                         </div>
