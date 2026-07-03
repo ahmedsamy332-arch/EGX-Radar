@@ -50,17 +50,13 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     low_series = df['Low'].squeeze()
     volume_series = df['Volume'].squeeze()
     
+    # === حساب المؤشرات الفنية (المستخدمة فعلياً فقط) ===
     df['RSI_14'] = calculate_rsi(close_series, window=14)
     df['EMA_9'] = close_series.ewm(span=9, adjust=False).mean()
     df['EMA_21'] = close_series.ewm(span=21, adjust=False).mean()
     df['MACD'], df['MACD_Signal'], df['MACD_Hist'] = calculate_macd(close_series)
-    df['BB_Upper'], df['BB_Lower'] = calculate_bb(close_series)
     df['ATR'] = calculate_atr(high_series, low_series, close_series)
     df['OBV'], df['OBV_EMA'] = calculate_obv_trend(close_series, volume_series)
-    df['StochRSI_K'], df['StochRSI_D'] = calculate_stoch_rsi(df['RSI_14'])
-    df['VWAP_14'] = calculate_vwap(high_series, low_series, close_series, volume_series)
-    df['SMA_50'] = close_series.rolling(window=50).mean()
-    df['SMA_200'] = close_series.rolling(window=200).mean()
     df['ADX'], df['PLUS_DI'], df['MINUS_DI'] = calculate_adx(high_series, low_series, close_series)
     df['SuperTrend'], df['SuperTrend_Dir'] = calculate_supertrend(high_series, low_series, close_series)
     df['BB_Squeeze'] = calculate_bb_squeeze(close_series)
@@ -74,15 +70,8 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     ema_21 = float(df['EMA_21'].iloc[-1])
     macd = float(df['MACD'].iloc[-1])
     macd_signal = float(df['MACD_Signal'].iloc[-1])
-    bb_upper = float(df['BB_Upper'].iloc[-1])
-    bb_lower = float(df['BB_Lower'].iloc[-1])
     obv = float(df['OBV'].iloc[-1])
     obv_ema = float(df['OBV_EMA'].iloc[-1])
-    stoch_k = float(df['StochRSI_K'].iloc[-1]) if not pd.isna(df['StochRSI_K'].iloc[-1]) else None
-    stoch_d = float(df['StochRSI_D'].iloc[-1]) if not pd.isna(df['StochRSI_D'].iloc[-1]) else None
-    vwap_14 = float(df['VWAP_14'].iloc[-1]) if not pd.isna(df['VWAP_14'].iloc[-1]) else None
-    sma_50 = float(df['SMA_50'].iloc[-1]) if not pd.isna(df['SMA_50'].iloc[-1]) else None
-    sma_200 = float(df['SMA_200'].iloc[-1]) if not pd.isna(df['SMA_200'].iloc[-1]) else None
     adx_val = float(df['ADX'].iloc[-1]) if not pd.isna(df['ADX'].iloc[-1]) else 0
     plus_di = float(df['PLUS_DI'].iloc[-1]) if not pd.isna(df['PLUS_DI'].iloc[-1]) else 0
     minus_di = float(df['MINUS_DI'].iloc[-1]) if not pd.isna(df['MINUS_DI'].iloc[-1]) else 0
@@ -108,13 +97,13 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         vol_status = "طبيعي"
     
     score = 0
-    status_desc = "محايد / تذبذب"
+    status_tags = []  # تجميع كل الحالات بدلاً من الكتابة فوقها
     avg_traded_value = avg_vol_10 * last_close
     is_valid_for_day_trading = True
     if yf_interval == "15m" and avg_traded_value < 1000000:
         is_valid_for_day_trading = False
         
-    # === نظام التقييم الفني المطور V2 ===
+    # === نظام التقييم الفني المطور V2.1 ===
     
     is_trend_strong = adx_val > 25
     is_trend_choppy = adx_val < 20
@@ -123,18 +112,26 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     # 1. SuperTrend (الأساس للاتجاه)
     if is_uptrend:
         score += 3
-        status_desc = "ترند صاعد مدعوم" if is_trend_strong else "بداية إيجابية"
+        status_tags.append("ترند صاعد مدعوم" if is_trend_strong else "بداية إيجابية")
     else:
         score -= 3
-        status_desc = "ترند هابط صريح" if is_trend_strong else "هبوط ضعيف"
+        status_tags.append("ترند هابط صريح" if is_trend_strong else "هبوط ضعيف")
         
     # 2. ADX Filter (تجنب التذبذب العرضي)
     if is_uptrend and is_trend_strong and plus_di > minus_di:
         score += 2 # صعود قوي
     elif not is_uptrend and is_trend_strong and minus_di > plus_di:
         score -= 2 # هبوط قوي
+    elif is_trend_choppy:
+        status_tags.append("تذبذب عرضي")
         
-    # 3. MACD
+    # 3. EMA Cross (مهم جداً للمضاربة اللحظية)
+    if ema_9 > ema_21:
+        score += 1
+    elif ema_9 < ema_21:
+        score -= 1
+        
+    # 4. MACD
     if macd > macd_signal: 
         if not is_trend_choppy:
             score += 1
@@ -144,14 +141,14 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         if not is_trend_choppy:
             score -= 1
             
-    # 4. RSI
+    # 5. RSI
     if rsi_14 < 35:
         if is_uptrend:
             score += 2 # فرصة شراء من قاع صاعد
-            status_desc = "تجميع من قاع (فرصة)"
+            status_tags.append("تجميع من قاع (فرصة)")
         elif bb_squeeze:
             score += 1
-            status_desc = "تشبع بيعي مع انكماش"
+            status_tags.append("تشبع بيعي مع انكماش")
         else:
             score -= 1 # سكين ساقط
     elif rsi_14 > 70:
@@ -159,37 +156,46 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
             score += 1 # الصعود قوي جداً
         else:
             score -= 2 # جني أرباح
-            status_desc = "تشبع شرائي متضخم"
+            status_tags.append("تشبع شرائي متضخم")
     elif 40 <= rsi_14 <= 60 and is_uptrend:
         score += 1
         
-    # 5. BB Squeeze & CMF (استكشاف الانفجارات السعرية)
+    # 6. BB Squeeze & CMF (استكشاف الانفجارات السعرية)
     if bb_squeeze:
-        status_desc = "استعداد لانفجار سعري"
+        status_tags.append("استعداد لانفجار سعري")
         if cmf_val > 0.05: # سيولة تتجمع
             score += 2
-            status_desc = "تجميع لانفجار لأعلى"
+            status_tags[-1] = "تجميع لانفجار لأعلى"
         elif cmf_val < -0.05:
             score -= 2
-            status_desc = "تصريف متوقع لانفجار لأسفل"
+            status_tags[-1] = "تصريف متوقع لانفجار لأسفل"
             
-    # 6. تأكيد السيولة العالية والمكثفة
+    # 7. تأكيد السيولة العالية والمكثفة (مع تسامح للمحايد)
     if vol_spike >= 150:
-        if last_close >= last_open and cmf_val > 0:
+        if last_close >= last_open and cmf_val >= -0.02:  # شمعة خضراء مع CMF غير سلبي
             score += 2
-        else:
+        elif last_close < last_open and cmf_val < -0.02:  # شمعة حمراء مع CMF سلبي
             score -= 2
+            
+    # 8. السيولة التراكمية (OBV) — كشف التصريف الخفي
+    if obv > obv_ema: 
+        score += 1
+    elif obv < obv_ema: 
+        score -= 1
+    
+    # === تجميع الحالة الفنية ===
+    status_desc = " | ".join(status_tags) if status_tags else "محايد / تذبذب"
     
     if not is_valid_for_day_trading:
         score = -10
         signal = "🚫 لا يدعم T+0 (سيولة ضعيفة)"
-    elif score >= 6:
+    elif score >= 8:
         signal = "🟢 إشارة شراء قوية"
-    elif score >= 2:
+    elif score >= 3:
         signal = "🟡 إيجابي / تجميع"
-    elif score >= -2:
+    elif score >= -3:
         signal = "⚪ محايد / استقرار"
-    elif score >= -5:
+    elif score >= -7:
         signal = "🟠 سلبي / جني أرباح جزئي"
     else:
         signal = "🔴 إشارة بيع قوية"
@@ -219,9 +225,8 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     ticker_display = f"{ticker.replace('.CA', '')} - {arabic_name}" if arabic_name else ticker.replace('.CA', '')
     
     if is_valid_for_day_trading:
-        # تحويل التقييم لنسبة مئوية (الحد الأقصى للسكور الجديد حوالي 12 والحد الأدنى -10)
-        # لتجنب كسر النسب، سنقوم بحسابها على أساس 12/-12
-        perc = int(((score + 12) / 24) * 100)
+        # الحد الأقصى النظري للسكور V2.1: +16 والحد الأدنى: -14
+        perc = int(((score + 14) / 30) * 100)
         perc = max(0, min(100, perc)) 
         score_percent = f"{perc}%"
     else:
