@@ -52,3 +52,76 @@ def calculate_vwap(high, low, close, volume, window=14):
     tp_vol = typical_price * volume
     vwap = tp_vol.rolling(window=window).sum() / volume.rolling(window=window).sum()
     return vwap
+
+def calculate_adx(high, low, close, window=14):
+    import numpy as np
+    up_move = high - high.shift(1)
+    down_move = low.shift(1) - low
+    
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+    
+    plus_dm = pd.Series(plus_dm, index=close.index)
+    minus_dm = pd.Series(minus_dm, index=close.index)
+    
+    tr1 = high - low
+    tr2 = (high - close.shift(1)).abs()
+    tr3 = (low - close.shift(1)).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    
+    atr = tr.ewm(alpha=1/window, adjust=False).mean()
+    plus_di = 100 * (plus_dm.ewm(alpha=1/window, adjust=False).mean() / atr)
+    minus_di = 100 * (minus_dm.ewm(alpha=1/window, adjust=False).mean() / atr)
+    
+    dx = (plus_di - minus_di).abs() / (plus_di + minus_di + 1e-10) * 100
+    adx = dx.ewm(alpha=1/window, adjust=False).mean()
+    
+    return adx, plus_di, minus_di
+
+def calculate_supertrend(high, low, close, period=10, multiplier=3):
+    tr1 = high - low
+    tr2 = (high - close.shift(1)).abs()
+    tr3 = (low - close.shift(1)).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    atr = tr.ewm(alpha=1/period, adjust=False).mean()
+    
+    hl2 = (high + low) / 2
+    final_upperband = hl2 + (multiplier * atr)
+    final_lowerband = hl2 - (multiplier * atr)
+    
+    supertrend = pd.Series(0.0, index=close.index)
+    direction = pd.Series(1, index=close.index)
+    
+    for i in range(1, len(close)):
+        if close.iloc[i] > final_upperband.iloc[i-1]:
+            direction.iloc[i] = 1
+        elif close.iloc[i] < final_lowerband.iloc[i-1]:
+            direction.iloc[i] = -1
+        else:
+            direction.iloc[i] = direction.iloc[i-1]
+            if direction.iloc[i] == 1 and final_lowerband.iloc[i] < final_lowerband.iloc[i-1]:
+                final_lowerband.iloc[i] = final_lowerband.iloc[i-1]
+            if direction.iloc[i] == -1 and final_upperband.iloc[i] > final_upperband.iloc[i-1]:
+                final_upperband.iloc[i] = final_upperband.iloc[i-1]
+                
+        if direction.iloc[i] == 1:
+            supertrend.iloc[i] = final_lowerband.iloc[i]
+        else:
+            supertrend.iloc[i] = final_upperband.iloc[i]
+            
+    return supertrend, direction
+
+def calculate_bb_squeeze(close, window=20):
+    sma = close.rolling(window=window).mean()
+    std = close.rolling(window=window).std(ddof=0)
+    upper = sma + (std * 2)
+    lower = sma - (std * 2)
+    bb_width = (upper - lower) / sma
+    squeeze_on = bb_width <= bb_width.rolling(window=window).min()
+    return squeeze_on
+
+def calculate_cmf(high, low, close, volume, window=20):
+    money_flow_mult = ((close - low) - (high - close)) / (high - low + 1e-10)
+    money_flow_vol = money_flow_mult * volume
+    cmf = money_flow_vol.rolling(window=window).sum() / volume.rolling(window=window).sum()
+    return cmf

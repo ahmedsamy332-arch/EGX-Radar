@@ -12,7 +12,7 @@ from data_assets import *
 
 
 # 1. إعدادات الصفحة لتناسب الموبايل
-st.set_page_config(page_title="نسر البورصة المصرية", layout="centered")
+st.set_page_config(page_title="نسر البورصة المصرية", layout="wide")
 
 # CSS مخصص - تصميم مستوحى من Tinder (داكن + تدرجات نارية)
 

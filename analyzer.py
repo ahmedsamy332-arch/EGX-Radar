@@ -61,6 +61,10 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     df['VWAP_14'] = calculate_vwap(high_series, low_series, close_series, volume_series)
     df['SMA_50'] = close_series.rolling(window=50).mean()
     df['SMA_200'] = close_series.rolling(window=200).mean()
+    df['ADX'], df['PLUS_DI'], df['MINUS_DI'] = calculate_adx(high_series, low_series, close_series)
+    df['SuperTrend'], df['SuperTrend_Dir'] = calculate_supertrend(high_series, low_series, close_series)
+    df['BB_Squeeze'] = calculate_bb_squeeze(close_series)
+    df['CMF'] = calculate_cmf(high_series, low_series, close_series, volume_series)
     
     last_close = float(close_series.iloc[-1])
     last_open = float(df['Open'].squeeze().iloc[-1])
@@ -79,6 +83,13 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     vwap_14 = float(df['VWAP_14'].iloc[-1]) if not pd.isna(df['VWAP_14'].iloc[-1]) else None
     sma_50 = float(df['SMA_50'].iloc[-1]) if not pd.isna(df['SMA_50'].iloc[-1]) else None
     sma_200 = float(df['SMA_200'].iloc[-1]) if not pd.isna(df['SMA_200'].iloc[-1]) else None
+    adx_val = float(df['ADX'].iloc[-1]) if not pd.isna(df['ADX'].iloc[-1]) else 0
+    plus_di = float(df['PLUS_DI'].iloc[-1]) if not pd.isna(df['PLUS_DI'].iloc[-1]) else 0
+    minus_di = float(df['MINUS_DI'].iloc[-1]) if not pd.isna(df['MINUS_DI'].iloc[-1]) else 0
+    st_val = float(df['SuperTrend'].iloc[-1]) if not pd.isna(df['SuperTrend'].iloc[-1]) else 0
+    st_dir = float(df['SuperTrend_Dir'].iloc[-1]) if not pd.isna(df['SuperTrend_Dir'].iloc[-1]) else 0
+    bb_squeeze = bool(df['BB_Squeeze'].iloc[-1])
+    cmf_val = float(df['CMF'].iloc[-1]) if not pd.isna(df['CMF'].iloc[-1]) else 0
     
     volume_sma_10 = volume_series.rolling(window=10).mean()
     if len(volume_sma_10) > 0 and pd.notna(volume_sma_10.iloc[-1]):
@@ -97,67 +108,77 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         vol_status = "طبيعي"
     
     score = 0
+    status_desc = "محايد / تذبذب"
     avg_traded_value = avg_vol_10 * last_close
     is_valid_for_day_trading = True
     if yf_interval == "15m" and avg_traded_value < 1000000:
         is_valid_for_day_trading = False
         
-    # === نظام التقييم الفني المطور ===
+    # === نظام التقييم الفني المطور V2 ===
     
-    # 1. فلتر الاتجاه العام (Trend Filter)
-    trend_up = False
-    if sma_50 is not None:
-        if last_close > sma_50:
-            trend_up = True
-            score += 2  # السعر فوق المتوسط 50 (إيجابي جداً)
-        else:
-            score -= 2  # السعر تحت المتوسط 50 (سلبي)
-            
-    # 2. الزخم قصير الأجل (EMA)
-    if ema_9 > ema_21: 
-        score += 1
-    elif ema_9 < ema_21: 
-        score -= 1
+    is_trend_strong = adx_val > 25
+    is_trend_choppy = adx_val < 20
+    is_uptrend = st_dir == 1
+    
+    # 1. SuperTrend (الأساس للاتجاه)
+    if is_uptrend:
+        score += 3
+        status_desc = "ترند صاعد مدعوم" if is_trend_strong else "بداية إيجابية"
+    else:
+        score -= 3
+        status_desc = "ترند هابط صريح" if is_trend_strong else "هبوط ضعيف"
         
-    # 3. تقاطع الماكد (MACD)
+    # 2. ADX Filter (تجنب التذبذب العرضي)
+    if is_uptrend and is_trend_strong and plus_di > minus_di:
+        score += 2 # صعود قوي
+    elif not is_uptrend and is_trend_strong and minus_di > plus_di:
+        score -= 2 # هبوط قوي
+        
+    # 3. MACD
     if macd > macd_signal: 
-        score += 1
-        if macd < 0: # تقاطع إيجابي تحت خط الصفر (بداية ارتداد)
-            score += 1 
-    elif macd < macd_signal: 
-        score -= 1
-        
-    # 4. مؤشر القوة النسبية (RSI) - تجنب السكاكين الساقطة
-    if rsi_14 < 35:
-        # السهم متشبع بيعياً.. هل هناك بوادر ارتداد؟
-        if macd > macd_signal or last_close > last_open:
-            score += 2 # ارتداد مؤكد
-        else:
-            score -= 1 # ترند هابط قوي (سكين ساقط)
-    elif rsi_14 > 70:
-        score -= 1 # السهم متشبع شرائياً (جني أرباح)
-    elif 40 <= rsi_14 <= 60 and trend_up:
-        score += 1 # تجميع صحي في ترند صاعد
-        
-    # 5. السيولة والـ VWAP
-    if vwap_14 is not None:
-        if last_close > vwap_14: 
+        if not is_trend_choppy:
             score += 1
-        elif last_close < vwap_14: 
+        if macd < 0 and is_uptrend: # تقاطع إيجابي مع ترند صاعد
+            score += 2
+    elif macd < macd_signal: 
+        if not is_trend_choppy:
             score -= 1
             
-    # تأكيد الاختراق بالسيولة
-    if vol_spike >= 150:
-        if last_close >= last_open: # شمعة خضراء بسيولة عالية
-            score += 2
-        else: # شمعة حمراء بسيولة بيعية عالية
-            score -= 2
-            
-    # 6. السيولة التراكمية (OBV)
-    if obv > obv_ema: 
+    # 4. RSI
+    if rsi_14 < 35:
+        if is_uptrend:
+            score += 2 # فرصة شراء من قاع صاعد
+            status_desc = "تجميع من قاع (فرصة)"
+        elif bb_squeeze:
+            score += 1
+            status_desc = "تشبع بيعي مع انكماش"
+        else:
+            score -= 1 # سكين ساقط
+    elif rsi_14 > 70:
+        if is_trend_strong and is_uptrend:
+            score += 1 # الصعود قوي جداً
+        else:
+            score -= 2 # جني أرباح
+            status_desc = "تشبع شرائي متضخم"
+    elif 40 <= rsi_14 <= 60 and is_uptrend:
         score += 1
-    elif obv < obv_ema: 
-        score -= 1
+        
+    # 5. BB Squeeze & CMF (استكشاف الانفجارات السعرية)
+    if bb_squeeze:
+        status_desc = "استعداد لانفجار سعري"
+        if cmf_val > 0.05: # سيولة تتجمع
+            score += 2
+            status_desc = "تجميع لانفجار لأعلى"
+        elif cmf_val < -0.05:
+            score -= 2
+            status_desc = "تصريف متوقع لانفجار لأسفل"
+            
+    # 6. تأكيد السيولة العالية والمكثفة
+    if vol_spike >= 150:
+        if last_close >= last_open and cmf_val > 0:
+            score += 2
+        else:
+            score -= 2
     
     if not is_valid_for_day_trading:
         score = -10
@@ -181,7 +202,11 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         settlement = "T+2 (سيولة ضعيفة)"
         
     entry_point = last_close
-    stop_loss = last_close - (1.5 * atr_val)
+    if is_uptrend and st_val > 0:
+        stop_loss = st_val
+    else:
+        stop_loss = last_close - (1.5 * atr_val)
+        
     take_profit = last_close + (3.0 * atr_val)
     
     if score < 0:
@@ -227,6 +252,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         "المخاطرة:العائد": rr_str,
         "السيولة": vol_status,
         "الزخم (RSI)": round(rsi_14, 1),
+        "الحالة الفنية": status_desc,
         "قوة التقييم": score_percent,
         "التوجيه الحالي": signal,
         "Score": score
