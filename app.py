@@ -1366,7 +1366,7 @@ with tabs[5]:
 
 
 if is_admin:
-    with tabs[6]:
+    with tabs[7]:
         st.subheader("👑 لوحة تحكم الإدارة")
         st.write("هذه اللوحة تظهر لك فقط بصفتك مدير النظام.")
         
