@@ -13,7 +13,7 @@ def get_tv():
         return None
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False, max_entries=200)
 def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name):
     df = pd.DataFrame()
     tv = get_tv()
@@ -41,6 +41,9 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
         
     # تنظيف البيانات من أي أيام إجازات أو بيانات ناقصة
     df = df.ffill().dropna()
+    
+    if len(df) < 20: # لا يوجد بيانات كافية للحسابات الفنية
+        return None
         
     close_series = df['Close'].squeeze()
     high_series = df['High'].squeeze()
@@ -98,39 +101,73 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     if yf_interval == "15m" and avg_traded_value < 1000000:
         is_valid_for_day_trading = False
         
-    if rsi_14 < 30: score += 1
-    elif rsi_14 > 70: score -= 1
-    if ema_9 > ema_21: score += 1
-    elif ema_9 < ema_21: score -= 1
-    if macd > macd_signal: score += 1
-    elif macd < macd_signal: score -= 1
-    if last_close <= bb_lower: score += 1
-    elif last_close >= bb_upper: score -= 1
-    if obv > obv_ema: score += 1
-    elif obv < obv_ema: score -= 1
+    # === نظام التقييم الفني المطور ===
     
-    if stoch_k is not None and stoch_d is not None:
-        if stoch_k > stoch_d and stoch_k < 80: score += 1
-        elif stoch_k < stoch_d and stoch_k > 20: score -= 1
+    # 1. فلتر الاتجاه العام (Trend Filter)
+    trend_up = False
+    if sma_50 is not None:
+        if last_close > sma_50:
+            trend_up = True
+            score += 2  # السعر فوق المتوسط 50 (إيجابي جداً)
+        else:
+            score -= 2  # السعر تحت المتوسط 50 (سلبي)
+            
+    # 2. الزخم قصير الأجل (EMA)
+    if ema_9 > ema_21: 
+        score += 1
+    elif ema_9 < ema_21: 
+        score -= 1
         
+    # 3. تقاطع الماكد (MACD)
+    if macd > macd_signal: 
+        score += 1
+        if macd < 0: # تقاطع إيجابي تحت خط الصفر (بداية ارتداد)
+            score += 1 
+    elif macd < macd_signal: 
+        score -= 1
+        
+    # 4. مؤشر القوة النسبية (RSI) - تجنب السكاكين الساقطة
+    if rsi_14 < 35:
+        # السهم متشبع بيعياً.. هل هناك بوادر ارتداد؟
+        if macd > macd_signal or last_close > df['Open'].iloc[-1]:
+            score += 2 # ارتداد مؤكد
+        else:
+            score -= 1 # ترند هابط قوي (سكين ساقط)
+    elif rsi_14 > 70:
+        score -= 1 # السهم متشبع شرائياً (جني أرباح)
+    elif 40 <= rsi_14 <= 60 and trend_up:
+        score += 1 # تجميع صحي في ترند صاعد
+        
+    # 5. السيولة والـ VWAP
     if vwap_14 is not None:
-        if last_close > vwap_14: score += 1
-        elif last_close < vwap_14: score -= 1
-        
-    if sma_50 is not None and sma_200 is not None:
-        if sma_50 > sma_200: score += 1
-        elif sma_50 < sma_200: score -= 1
+        if last_close > vwap_14: 
+            score += 1
+        elif last_close < vwap_14: 
+            score -= 1
+            
+    # تأكيد الاختراق بالسيولة
+    if vol_spike >= 150:
+        if last_close >= df['Open'].iloc[-1]: # شمعة خضراء بسيولة عالية
+            score += 2
+        else: # شمعة حمراء بسيولة بيعية عالية
+            score -= 2
+            
+    # 6. السيولة التراكمية (OBV)
+    if obv > obv_ema: 
+        score += 1
+    elif obv < obv_ema: 
+        score -= 1
     
     if not is_valid_for_day_trading:
         score = -10
         signal = "🚫 لا يدعم T+0 (سيولة ضعيفة)"
-    elif score >= 4:
+    elif score >= 6:
         signal = "🟢 إشارة شراء قوية"
-    elif score >= 1:
+    elif score >= 2:
         signal = "🟡 إيجابي / تجميع"
-    elif score >= -1:
+    elif score >= -2:
         signal = "⚪ محايد / استقرار"
-    elif score >= -4:
+    elif score >= -5:
         signal = "🟠 سلبي / جني أرباح جزئي"
     else:
         signal = "🔴 إشارة بيع قوية"
@@ -156,10 +193,10 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     ticker_display = f"{ticker.replace('.CA', '')} - {arabic_name}" if arabic_name else ticker.replace('.CA', '')
     
     if is_valid_for_day_trading:
-        # تحويل التقييم من [-8, 8] إلى نسبة مئوية [0%, 100%]
-        # حيث 8 تعني 100% (شراء قوي جداً) و -8 تعني 0% (بيع قوي جداً)
-        perc = int(((score + 8) / 16) * 100)
-        perc = max(0, min(100, perc)) # للحماية من أي قيمة غير متوقعة
+        # تحويل التقييم لنسبة مئوية (الحد الأقصى للسكور الجديد حوالي 12 والحد الأدنى -10)
+        # لتجنب كسر النسب، سنقوم بحسابها على أساس 12/-12
+        perc = int(((score + 12) / 24) * 100)
+        perc = max(0, min(100, perc)) 
         score_percent = f"{perc}%"
     else:
         score_percent = "غير صالح"
@@ -196,7 +233,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
 
 
 
-@st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=120, show_spinner=False, max_entries=50)
 def get_daily_performance(ticker, arabic_name):
     tv = get_tv()
     if not tv: return None
