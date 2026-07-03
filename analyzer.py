@@ -63,6 +63,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     df['SMA_200'] = close_series.rolling(window=200).mean()
     
     last_close = float(close_series.iloc[-1])
+    last_open = float(df['Open'].squeeze().iloc[-1])
     atr_val = float(df['ATR'].iloc[-1])
     rsi_14 = float(df['RSI_14'].iloc[-1])
     ema_9 = float(df['EMA_9'].iloc[-1])
@@ -129,7 +130,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
     # 4. مؤشر القوة النسبية (RSI) - تجنب السكاكين الساقطة
     if rsi_14 < 35:
         # السهم متشبع بيعياً.. هل هناك بوادر ارتداد؟
-        if macd > macd_signal or last_close > df['Open'].iloc[-1]:
+        if macd > macd_signal or last_close > last_open:
             score += 2 # ارتداد مؤكد
         else:
             score -= 1 # ترند هابط قوي (سكين ساقط)
@@ -147,7 +148,7 @@ def analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_nam
             
     # تأكيد الاختراق بالسيولة
     if vol_spike >= 150:
-        if last_close >= df['Open'].iloc[-1]: # شمعة خضراء بسيولة عالية
+        if last_close >= last_open: # شمعة خضراء بسيولة عالية
             score += 2
         else: # شمعة حمراء بسيولة بيعية عالية
             score -= 2
