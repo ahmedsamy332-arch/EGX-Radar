@@ -136,20 +136,14 @@ section[data-testid="stSidebar"] {
 
 /* === TABS (TINDER STYLE) === */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
+    gap: 8px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
-    padding: 5px;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: nowrap !important;
-    flex-wrap: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none;
+    padding: 8px;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
 }
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
-    display: none;
-}
+
 .stTabs [data-baseweb="tab"] {
     border-radius: 12px !important;
     padding: 10px 16px !important;
@@ -324,18 +318,12 @@ section[data-testid="stSidebar"] { direction: rtl; text-align: right; }
 .stTabs [data-baseweb="tab-list"] { 
     background: #e9ecef; 
     border-radius: 15px; 
-    padding: 5px; 
-    gap: 4px; 
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: nowrap !important;
-    flex-wrap: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none;
+    padding: 8px; 
+    gap: 8px; 
+    flex-wrap: wrap !important;
+    justify-content: center !important;
 }
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
-    display: none;
-}
+
 .stTabs [data-baseweb="tab"] { border-radius: 12px !important; padding: 10px 16px !important; color: #555 !important; font-weight: 600 !important; background: transparent !important; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #fd267a 0%, #ff6036 100%) !important; color: white !important; box-shadow: 0 4px 12px rgba(253, 38, 122, 0.2) !important; }
 
