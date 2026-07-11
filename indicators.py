@@ -73,6 +73,7 @@ def calculate_adx(high, low, close, window=14):
     return adx, plus_di, minus_di
 
 def calculate_supertrend(high, low, close, period=10, multiplier=3):
+    """SuperTrend محسّن — متوافق مع TradingView (ترتيب Band Clamping الصحيح)"""
     tr1 = high - low
     tr2 = (high - close.shift(1)).abs()
     tr3 = (low - close.shift(1)).abs()
@@ -80,28 +81,49 @@ def calculate_supertrend(high, low, close, period=10, multiplier=3):
     atr = tr.ewm(alpha=1/period, adjust=False).mean()
     
     hl2 = (high + low) / 2
-    final_upperband = hl2 + (multiplier * atr)
-    final_lowerband = hl2 - (multiplier * atr)
+    basic_upper = hl2 + (multiplier * atr)
+    basic_lower = hl2 - (multiplier * atr)
     
+    final_upper = basic_upper.copy()
+    final_lower = basic_lower.copy()
     supertrend = pd.Series(0.0, index=close.index)
     direction = pd.Series(1, index=close.index)
     
+    # ضبط القيمة الأولية بناءً على وضع السوق الفعلي
+    if close.iloc[0] > basic_upper.iloc[0]:
+        direction.iloc[0] = 1
+    else:
+        direction.iloc[0] = -1
+    
     for i in range(1, len(close)):
-        if close.iloc[i] > final_upperband.iloc[i-1]:
-            direction.iloc[i] = 1
-        elif close.iloc[i] < final_lowerband.iloc[i-1]:
-            direction.iloc[i] = -1
+        # الخطوة 1: تثبيت النطاقات (Band Clamping) — قبل فحص الاتجاه
+        if basic_lower.iloc[i] > final_lower.iloc[i-1] or close.iloc[i-1] < final_lower.iloc[i-1]:
+            final_lower.iloc[i] = basic_lower.iloc[i]
         else:
-            direction.iloc[i] = direction.iloc[i-1]
-            if direction.iloc[i] == 1 and final_lowerband.iloc[i] < final_lowerband.iloc[i-1]:
-                final_lowerband.iloc[i] = final_lowerband.iloc[i-1]
-            if direction.iloc[i] == -1 and final_upperband.iloc[i] > final_upperband.iloc[i-1]:
-                final_upperband.iloc[i] = final_upperband.iloc[i-1]
-                
+            final_lower.iloc[i] = final_lower.iloc[i-1]
+            
+        if basic_upper.iloc[i] < final_upper.iloc[i-1] or close.iloc[i-1] > final_upper.iloc[i-1]:
+            final_upper.iloc[i] = basic_upper.iloc[i]
+        else:
+            final_upper.iloc[i] = final_upper.iloc[i-1]
+        
+        # الخطوة 2: تحديد الاتجاه بعد تثبيت النطاقات
+        if direction.iloc[i-1] == 1:  # كان صاعد
+            if close.iloc[i] < final_lower.iloc[i]:
+                direction.iloc[i] = -1  # انعكس لهابط
+            else:
+                direction.iloc[i] = 1   # استمرار صعود
+        else:  # كان هابط
+            if close.iloc[i] > final_upper.iloc[i]:
+                direction.iloc[i] = 1   # انعكس لصاعد
+            else:
+                direction.iloc[i] = -1  # استمرار هبوط
+        
+        # الخطوة 3: تحديد قيمة SuperTrend
         if direction.iloc[i] == 1:
-            supertrend.iloc[i] = final_lowerband.iloc[i]
+            supertrend.iloc[i] = final_lower.iloc[i]
         else:
-            supertrend.iloc[i] = final_upperband.iloc[i]
+            supertrend.iloc[i] = final_upper.iloc[i]
             
     return supertrend, direction
 
@@ -122,3 +144,94 @@ def calculate_cmf(high, low, close, volume, window=20):
     money_flow_vol = money_flow_mult * volume
     cmf = money_flow_vol.rolling(window=window).sum() / volume.rolling(window=window).sum()
     return cmf
+
+# === المؤشرات الجديدة V3.0 ===
+
+def detect_rsi_divergence(close, rsi, lookback=20):
+    """
+    كشف التباعد بين السعر و RSI (Bullish & Bearish Divergence)
+    يرجع:
+      1 = Bullish Divergence (السعر قاع أدنى + RSI قاع أعلى → ارتداد متوقع)
+     -1 = Bearish Divergence (السعر قمة أعلى + RSI قمة أدنى → هبوط متوقع)
+      0 = لا يوجد تباعد
+    """
+    if len(close) < lookback + 5:
+        return 0
+    
+    recent_close = close.iloc[-lookback:]
+    recent_rsi = rsi.iloc[-lookback:]
+    half = lookback // 2
+    
+    # البحث عن القيعان (Swing Lows)
+    first_half_close = recent_close.iloc[:half]
+    second_half_close = recent_close.iloc[half:]
+    first_half_rsi = recent_rsi.iloc[:half]
+    second_half_rsi = recent_rsi.iloc[half:]
+    
+    price_low_1 = first_half_close.min()
+    price_low_2 = second_half_close.min()
+    rsi_low_1 = first_half_rsi.iloc[first_half_close.values.argmin()]
+    rsi_low_2 = second_half_rsi.iloc[second_half_close.values.argmin()]
+    
+    # Bullish Divergence: سعر قاع أدنى + RSI قاع أعلى
+    if price_low_2 < price_low_1 and rsi_low_2 > rsi_low_1 + 2:
+        return 1
+    
+    # البحث عن القمم (Swing Highs)
+    price_high_1 = first_half_close.max()
+    price_high_2 = second_half_close.max()
+    rsi_high_1 = first_half_rsi.iloc[first_half_close.values.argmax()]
+    rsi_high_2 = second_half_rsi.iloc[second_half_close.values.argmax()]
+    
+    # Bearish Divergence: سعر قمة أعلى + RSI قمة أدنى
+    if price_high_2 > price_high_1 and rsi_high_2 < rsi_high_1 - 2:
+        return -1
+    
+    return 0
+
+def calculate_stochastic_rsi(close, rsi_period=14, stoch_period=14, k_smooth=3, d_smooth=3):
+    """
+    Stochastic RSI — أكثر حساسية من RSI العادي لكشف القمم والقيعان
+    يرجع (K, D) حيث:
+      K < 20 = تشبع بيعي
+      K > 80 = تشبع شرائي
+      K يقطع D لأعلى = إشارة شراء
+      K يقطع D لأسفل = إشارة بيع
+    """
+    rsi = calculate_rsi(close, window=rsi_period)
+    
+    rsi_min = rsi.rolling(window=stoch_period).min()
+    rsi_max = rsi.rolling(window=stoch_period).max()
+    
+    stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min + 1e-10) * 100
+    
+    k = stoch_rsi.rolling(window=k_smooth).mean()
+    d = k.rolling(window=d_smooth).mean()
+    
+    return k, d
+
+def calculate_pivot_points(high, low, close):
+    """
+    حساب مستويات الدعم والمقاومة (Pivot Points) من آخر شمعة مكتملة
+    يستخدم الطريقة الكلاسيكية (Standard Pivot):
+      PP = (H + L + C) / 3
+      S1 = 2*PP - H,   R1 = 2*PP - L
+      S2 = PP - (H-L),  R2 = PP + (H-L)
+    """
+    h = float(high.iloc[-2]) if len(high) >= 2 else float(high.iloc[-1])
+    l = float(low.iloc[-2]) if len(low) >= 2 else float(low.iloc[-1])
+    c = float(close.iloc[-2]) if len(close) >= 2 else float(close.iloc[-1])
+    
+    pp = (h + l + c) / 3.0
+    s1 = (2 * pp) - h
+    r1 = (2 * pp) - l
+    s2 = pp - (h - l)
+    r2 = pp + (h - l)
+    
+    return {
+        "PP": round(pp, 3),
+        "S1": round(s1, 3),
+        "S2": round(s2, 3),
+        "R1": round(r1, 3),
+        "R2": round(r2, 3)
+    }
