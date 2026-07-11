@@ -1,0 +1,13 @@
+name: Keep Streamlit App Alive
+
+on:
+  schedule:
+    - cron: "0 0 */3 * *" # Runs at 00:00 every 3 days
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: curl -s https://egx-radar-2semzy6ki8y3xttrqxes7t.streamlit.app/ > /dev/null
