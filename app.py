@@ -22,6 +22,47 @@ if "theme" not in st.session_state:
 def toggle_theme():
     st.session_state["theme"] = "light" if st.session_state["theme"] == "dark" else "dark"
 
+# إضافة زر لتبديل الوضع الداكن/الفاتح في الشريط الجانبي
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "dark"
+
+def toggle_theme():
+    st.session_state["theme"] = "light" if st.session_state["theme"] == "dark" else "dark"
+
+# زر التبديل في الـ sidebar
+st.sidebar.button("🔄 تبديل الثيم", on_click=toggle_theme)
+
+# تطبيق الـ CSS الخاص بالخطوط المتجاوبة (responsive fonts)
+st.markdown(
+    """
+    <style>
+    /* خطوط متجاوبة عبر أحجام الشاشة */
+    @media (max-width: 600px) {
+        p, label, span, li, .stMarkdown p, .stText {
+            font-size: 14px !important;
+        }
+        h1 {font-size: 24px !important;}
+        h2 {font-size: 20px !important;}
+    }
+    @media (min-width: 601px) and (max-width: 1024px) {
+        p, label, span, li, .stMarkdown p, .stText {
+            font-size: 16px !important;
+        }
+        h1 {font-size: 28px !important;}
+        h2 {font-size: 24px !important;}
+    }
+    @media (min-width: 1025px) {
+        p, label, span, li, .stMarkdown p, .stText {
+            font-size: 17px !important;
+        }
+        h1 {font-size: 32px !important;}
+        h2 {font-size: 28px !important;}
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 DARK_THEME_CSS = """
 /* إخفاء زر النشر في الشريط العلوي فقط */
 .stAppDeployButton, [data-testid="stAppDeployButton"] {
@@ -392,6 +433,12 @@ if "user" not in st.session_state:
 if "user_data" not in st.session_state:
     st.session_state["user_data"] = {"favorites": [], "portfolio": []}
 
+# التأكد من تحميل الكوكيز لتجنب الوميض المزعج (Flicker)
+cookies = cookie_manager.get_all()
+if cookies is None:
+    # الكوكيز لم يتم تحميلها بعد، أوقف التنفيذ هنا لتجنب إظهار شاشة الدخول للحظة
+    st.stop()
+
 # قراءة التوكن المحفوظ (بيكون متوفر دايماً بعد تحميل الصفحة)
 saved_token = cookie_manager.get("egx_refresh_token")
 
@@ -478,134 +525,6 @@ with st.sidebar:
 
 # 2. قائمة الأسهم الافتراضية (مقسمة لقطاعات تغطي مؤشرات السوق EGX30, EGX70, EGX100)
 
-egx_stocks = {
-    "🏦 البنوك": {
-        "COMI.CA": "البنك التجاري الدولي",
-        "CIEB.CA": "كريدي أجريكول",
-        "ADIB.CA": "مصرف أبو ظبي الإسلامي",
-        "EGBE.CA": "البنك المصري الخليجي",
-        "FAIT.CA": "بنك فيصل الإسلامي",
-        "EXPA.CA": "البنك المصري لتنمية الصادرات",
-        "CANA.CA": "بنك قناة السويس",
-        "QNBA.CA": "بنك قطر الوطني",
-        "HDBK.CA": "بنك التعمير والإسكان",
-        "SAUD.CA": "بنك البركة"
-    },
-    "🏢 العقارات والمقاولات": {
-        "TMGH.CA": "مجموعة طلعت مصطفى",
-        "PHDC.CA": "بالم هيلز",
-        "HELI.CA": "مصر الجديدة للإسكان",
-        "MASR.CA": "مدينة مصر",
-        "EMFD.CA": "إعمار مصر",
-        "OCDI.CA": "سوديك",
-        "ARAB.CA": "المطورون العرب",
-        "UNIT.CA": "المتحدة للإسكان",
-        "SWDY.CA": "السويدي إيليكتريك",
-        "ORAS.CA": "أوراسكوم كونستراكشون",
-        "ZMID.CA": "زهراء المعادي",
-        "EHDR.CA": "المصريين للإسكان",
-        "ELSH.CA": "الشمس للإسكان",
-        "RTVC.CA": "ريمكو للقرى السياحية",
-        "GGCC.CA": "الجيزة العامة للمقاولات",
-        "ORHD.CA": "أوراسكوم للتنمية",
-        "MINA.CA": "مينا للاستثمار السياحي",
-        "EGTS.CA": "المصرية للمنتجعات السياحية",
-        "UEGC.CA": "الصعيد العامة للمقاولات",
-        "ISMA.CA": "الإسماعيلية للتطوير",
-        "ADRI.CA": "العقارية للبنوك"
-    },
-    "🛢️ الموارد الأساسية والبتروكيماويات والأسمنت": {
-        "ABUK.CA": "أبو قير للأسمدة",
-        "MFPC.CA": "موبكو",
-        "SKPC.CA": "سيدي كرير",
-        "AMOC.CA": "أموك",
-        "EGAL.CA": "مصر للألومنيوم",
-        "ESRS.CA": "حديد عز",
-        "EFIC.CA": "المالية والصناعية",
-        "IRON.CA": "الحديد والصلب",
-        "SVCE.CA": "جنوب الوادي للأسمنت",
-        "ARCC.CA": "الإسكندرية للأسمنت",
-        "EGCH.CA": "المصرية للكيمياويات",
-        "MCQE.CA": "مصر لصناعة الكيماويات",
-        "ASCM.CA": "أسيك للتعدين",
-        "PACH.CA": "البويات والصناعات (باكين)",
-        "MICH.CA": "مصر لصناعة الكيماويات"
-    },
-    "💻 الاتصالات وتكنولوجيا المعلومات والتعليم": {
-        "FWRY.CA": "فوري",
-        "EFIH.CA": "إي فاينانس",
-        "ETEL.CA": "المصرية للاتصالات",
-        "RACC.CA": "راية مراكز الاتصالات",
-        "CIRA.CA": "القاهرة للاستثمار (سيرا)",
-        "OIH.CA": "أوراسكوم للاستثمار"
-    },
-    "📈 الخدمات المالية والاستثمار": {
-        "HRHO.CA": "إي إف جي القابضة",
-        "BTFH.CA": "بلتون المالية",
-        "CCAP.CA": "القلعة للاستثمارات",
-        "PRMH.CA": "برايم القابضة",
-        "RAYA.CA": "راية القابضة",
-        "BINV.CA": "بي إنفستمنتس",
-        "AMIA.CA": "الملتقى العربي للاستثمارات",
-        "ODIN.CA": "أودن للاستثمارات",
-        "MOIN.CA": "المهندس للتأمين",
-        "ATLC.CA": "الأهلي للتنمية والاستثمار",
-        "CICH.CA": "سي آي كابيتال",
-        "CECE.CA": "القاهرة الوطنية للاستثمار",
-        "AIFI.CA": "العربية للاستثمارات"
-    },
-    "💊 الرعاية الصحية والأدوية": {
-        "ISPH.CA": "ابن سينا فارما",
-        "CLHO.CA": "كليوباترا مستشفى",
-        "RMDA.CA": "راميدا",
-        "CPMI.CA": "كليوباترا ميديكال",
-        "IPCI.CA": "إيبيكو للأدوية",
-        "MIPH.CA": "مينا فارم",
-        "NIPH.CA": "النيل للأدوية",
-        "MCRO.CA": "ماكرو جروب"
-    },
-    "🛒 الأغذية والسلع الاستهلاكية والمنسوجات": {
-        "JUFO.CA": "جهينة",
-        "SUGR.CA": "الدلتا للسكر",
-        "DOMT.CA": "دومتي",
-        "EFID.CA": "إيديتا",
-        "ORWE.CA": "النساجون الشرقيون",
-        "AUTO.CA": "جي بي كوربوريشن",
-        "MTIE.CA": "إم إم جروب",
-        "DSCW.CA": "دايس للملابس",
-        "ACGC.CA": "العربية لحليج الأقطان",
-        "POUL.CA": "القاهرة للدواجن",
-        "SPIN.CA": "سبينالكس",
-        "ELEC.CA": "إلكتروكابل",
-        "MPCO.CA": "المنصورة للدواجن",
-        "KABO.CA": "النصر للملابس (كابو)",
-        "ELKA.CA": "القاهرة للزيوت والصابون",
-        "ZEOT.CA": "الإسكندرية للزيوت",
-        "ICMI.CA": "الدولية للمحاصيل"
-    },
-    "🚢 الشحن والنقل وقطاعات أخرى": {
-        "ALCN.CA": "الإسكندرية لتداول الحاويات",
-        "UASG.CA": "المتحدة للشحن",
-        "CSAG.CA": "القناة للتوكيلات الملاحية",
-        "ETRS.CA": "المصرية لخدمات النقل",
-        "EGYT.CA": "إيجيترانس",
-        "TRNS.CA": "ترانس كارجو",
-        "ENGC.CA": "الهندسية للإنشاء",
-        "ARVA.CA": "أراب فالف",
-        "SDTI.CA": "شرم دريمز",
-        "PRDC.CA": "بيراميزا للفنادق",
-        "ROTO.CA": "رواد السياحة"
-    }
-}
-
-stock_names = {}
-stock_sectors = {}
-
-for sector, stocks in egx_stocks.items():
-    clean_sector_name = sector.split(' ', 1)[1] if ' ' in sector else sector
-    stock_names.update(stocks)
-    for ticker in stocks.keys():
-        stock_sectors[ticker] = clean_sector_name
 
 
 favorites_list = st.session_state.get('user_data', {}).get('favorites', [])

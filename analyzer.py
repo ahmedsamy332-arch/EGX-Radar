@@ -7,6 +7,8 @@ from indicators import *
 @st.cache_resource
 def get_tv():
     try:
+        if "TV_USER" in st.secrets and "TV_PASS" in st.secrets:
+            return TvDatafeed(st.secrets["TV_USER"], st.secrets["TV_PASS"])
         return TvDatafeed()
     except Exception as e:
         print("tvDatafeed init error:", e)
