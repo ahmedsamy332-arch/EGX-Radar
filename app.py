@@ -12,7 +12,7 @@ from data_assets import *
 
 
 # 1. إعدادات الصفحة لتناسب الموبايل
-st.set_page_config(page_title="نسر البورصة المصرية", layout="wide")
+st.set_page_config(page_title="نسر البورصة المصرية - رادار EGX30", layout="wide")
 
 # CSS مخصص - تصميم مستوحى من Tinder (داكن + تدرجات نارية)
 
@@ -409,7 +409,7 @@ with col_theme1:
 # عنوان الموقع والإمضاء بتصميم Tinder
 st.markdown("""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: -30px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); width: 100%;">
-    <div class="main-eagle-title" style="margin: 0; padding: 0; text-align: center;">🦅 نسر البورصة</div>
+    <div class="main-eagle-title" style="margin: 0; padding: 0; text-align: center;">🦅 نسر البورصة — رادار EGX30</div>
     <div style="font-size: 14px !important; color: #888; font-weight: 600; font-family: 'Cairo', sans-serif; margin-top: 10px; text-align: center;">
         <span style="font-weight: normal; color: #666;">By</span> <span style="background: linear-gradient(135deg, #fd267a, #ff6036); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AHMED SAMY</span>
     </div>
@@ -523,7 +523,7 @@ with st.sidebar:
 
 
 
-# 2. قائمة الأسهم الافتراضية (مقسمة لقطاعات تغطي مؤشرات السوق EGX30, EGX70, EGX100)
+# 2. قائمة أسهم مؤشر EGX30 القيادي مقسمة لقطاعات السوق
 
 
 
@@ -594,21 +594,20 @@ with tabs[0]:
 
     def format_stock_option(ticker):
         name = stock_names.get(ticker, "")
-        idx = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "EGX100")
-        return f"{ticker.replace('.CA', '')} - {name} ({idx})"
+        return f"{ticker.replace('.CA', '')} - {name}"
 
     st.subheader("📋 2. طريقة اختيار الأسهم للمراقبة")
     selection_method = st.radio(
-        "هل ترغب في فحص مجموعات أو مؤشرات؟",
-        ["لا أريد (سأكتفي بأسهم السيرش فقط)", "فحص مؤشر EGX30 بالكامل", "فحص مؤشر EGX70 بالكامل", "فحص البورصة بالكامل (كل الأسهم)"],
+        "نطاق فحص مؤشر EGX30:",
+        ["فحص مؤشر EGX30 بالكامل (الافتراضي)", "فحص أسهم محددة من EGX30 بالبحث فقط"],
         horizontal=True,
-        index=None
+        index=0
     )
 
     if selection_method:
         st.subheader("📋 3. إضافة أسهم مخصصة للبحث (اختياري)")
         specific_search_stocks = st.multiselect(
-            "ابحث باسم السهم أو الكود:",
+            "ابحث باسم السهم أو الكود من أسهم EGX30:",
             options=list(stock_names.keys()),
             default=[],
             format_func=format_stock_option
@@ -627,15 +626,8 @@ with tabs[0]:
         if True:
             selected_stocks = list(specific_search_stocks)
 
-            if selection_method == "لا أريد (سأكتفي بأسهم السيرش فقط)":
-                pass
-            else:
-                if "EGX30" in selection_method:
-                    selected_stocks.extend(egx30_list)
-                elif "EGX70" in selection_method:
-                    selected_stocks.extend(egx70_list)
-                elif "البورصة بالكامل" in selection_method:
-                    selected_stocks.extend(egx100_list)
+            if "EGX30 بالكامل" in selection_method:
+                selected_stocks.extend(egx30_list)
 
             selected_stocks = list(dict.fromkeys(selected_stocks))
 
@@ -654,7 +646,7 @@ with tabs[0]:
                         status_text.markdown(f"**⏳ جاري الفحص:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
 
                         sector_name = stock_sectors.get(ticker, "غير محدد")
-                        index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
+                        index_name = "EGX30"
 
                         res = analyze_stock_cached(ticker, yf_period, yf_interval, arabic_name, sector_name, index_name)
                         if res:
@@ -694,27 +686,14 @@ with tabs[0]:
 
 
 with tabs[1]:
-    st.subheader("🔥 الفرص الذهبية (اقتراحات الذكاء الاصطناعي)")
+    st.subheader("🔥 الفرص الذهبية لمؤشر EGX30 (اقتراحات الذكاء الاصطناعي)")
     
-    golden_index_choice = st.radio(
-        "اختر المؤشر للبحث عن الفرص الذهبية:",
-        ["EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
-        horizontal=True
-    )
-    
-    if "30" in golden_index_choice:
-        golden_list = egx30_list
-        g_idx_name = "EGX30"
-    elif "70" in golden_index_choice:
-        golden_list = egx70_list
-        g_idx_name = "EGX70"
-    else:
-        golden_list = egx100_list
-        g_idx_name = "EGX100"
+    golden_list = egx30_list
+    g_idx_name = "EGX30"
         
-    st.write(f"البرنامج هيفحص أسهم {g_idx_name} على المدى (اليومي + اللحظي) وهيرشحلك الأسهم اللي فيها إشارة شراء قوية واتجاه صاعد متطابق.")
+    st.write("البرنامج هيفحص أسهم مؤشر EGX30 بالكامل على المدى (اليومي + اللحظي) وهيرشحلك الأسهم اللي فيها إشارة شراء قوية واتجاه صاعد متطابق.")
     
-    if st.button(f"🔍 ابدأ فحص الفرص الذهبية في {g_idx_name}", use_container_width=True):
+    if st.button("🔍 ابدأ فحص الفرص الذهبية في مؤشر EGX30", use_container_width=True):
         st.cache_data.clear()
         golden_results = []
         progress_bar = st.progress(0)
@@ -725,7 +704,7 @@ with tabs[1]:
             arabic_name = stock_names.get(ticker, "")
             status_text.markdown(f"**⏳ جاري فحص وتحليل:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
             sector_name = stock_sectors.get(ticker, "غير محدد")
-            curr_index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "EGX100")
+            curr_index_name = "EGX30"
             
             # تحليل يومي
             res_1d = analyze_stock_cached(ticker, "2y", "1d", arabic_name, sector_name, curr_index_name)
@@ -789,14 +768,7 @@ with tabs[1]:
 
 
 with tabs[2]:
-    st.subheader("📉 قنص القيعان (Oversold Scanner)")
-    
-    sniper_index_choice = st.radio(
-        "اختر المؤشر لبحث قنص القيعان:",
-        ["EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
-        horizontal=True,
-        index=2
-    )
+    st.subheader("📉 قنص القيعان في مؤشر EGX30 (Oversold Scanner)")
     
     timeframe_sniper = st.radio(
         "اختر المدى الزمني للبحث عن القيعان:",
@@ -817,19 +789,12 @@ with tabs[2]:
         sniper_yf_period = "2y"
         sniper_yf_interval = "1d"
     
-    if "30" in sniper_index_choice:
-        sniper_list = egx30_list
-        s_idx_name = "EGX30"
-    elif "70" in sniper_index_choice:
-        sniper_list = egx70_list
-        s_idx_name = "EGX70"
-    else:
-        sniper_list = egx100_list
-        s_idx_name = "EGX100"
+    sniper_list = egx30_list
+    s_idx_name = "EGX30"
 
-    st.write(f"البرنامج هيفحص أسهم {s_idx_name} وهيرشحلك الأسهم اللي نزلت لأقصى قاع لها (التشبع البيعي) وفي احتمالية كويسة لارتدادها.")
+    st.write("البرنامج هيفحص أسهم مؤشر EGX30 وهيرشحلك الأسهم اللي نزلت لأقصى قاع لها (التشبع البيعي) وفي احتمالية كويسة لارتدادها.")
     
-    if st.button(f"🔎 ابدأ فحص قنص القيعان في {s_idx_name}", use_container_width=True):
+    if st.button("🔎 ابدأ فحص قنص القيعان في مؤشر EGX30", use_container_width=True):
         st.cache_data.clear()
         oversold_results = []
         progress_bar = st.progress(0)
@@ -841,7 +806,7 @@ with tabs[2]:
             arabic_name = stock_names.get(ticker, "")
             status_text.markdown(f"**⏳ جاري الفحص:** {arabic_name} ({ticker}) ... [{i+1}/{total}]")
             sector_name = stock_sectors.get(ticker, "غير محدد")
-            index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
+            index_name = "EGX30"
             
             # تحليل حسب المدى الزمني المختار
             res = analyze_stock_cached(ticker, sniper_yf_period, sniper_yf_interval, arabic_name, sector_name, index_name)
@@ -891,28 +856,14 @@ with tabs[2]:
 
 
 with tabs[3]:
-    st.subheader("📈 حصاد الجلسة (الأكثر صعوداً وهبوطاً)")
+    st.subheader("📈 حصاد الجلسة لمؤشر EGX30 (الأكثر صعوداً وهبوطاً)")
     
-    harvest_index_choice = st.radio(
-        "اختر المؤشر لبحث حصاد الجلسة:",
-        ["EGX30 (القيادية)", "EGX70 (المتوسطة والصغيرة)", "EGX100 (السوق بالكامل)"],
-        horizontal=True,
-        index=2
-    )
-    
-    if "30" in harvest_index_choice:
-        harvest_list = egx30_list
-        h_idx_name = "EGX30"
-    elif "70" in harvest_index_choice:
-        harvest_list = egx70_list
-        h_idx_name = "EGX70"
-    else:
-        harvest_list = egx100_list
-        h_idx_name = "EGX100"
+    harvest_list = egx30_list
+    h_idx_name = "EGX30"
 
-    st.write(f"البرنامج هيفحص أداء أسهم {h_idx_name} لليوم الحالي ويطلعلك الأسهم الأكثر ربحاً والأكثر خسارة بنهاية الجلسة.")
+    st.write("البرنامج هيفحص أداء أسهم مؤشر EGX30 لليوم الحالي ويطلعلك الأسهم الأكثر ربحاً والأكثر خسارة بنهاية الجلسة.")
     
-    if st.button(f"📊 ابدأ فحص حصاد الجلسة لـ {h_idx_name} (فحص سريع)", use_container_width=True):
+    if st.button("📊 ابدأ فحص حصاد الجلسة لـ EGX30 (فحص سريع)", use_container_width=True):
         st.cache_data.clear()
         daily_results = []
         progress_bar = st.progress(0)
@@ -1005,7 +956,7 @@ with tabs[4]:
             for i, fav_ticker in enumerate(favorites_list):
                 arabic_name = stock_names.get(fav_ticker, "")
                 sector_name = stock_sectors.get(fav_ticker, "غير محدد")
-                index_name = "EGX30" if fav_ticker in egx30_list else ("EGX70" if fav_ticker in egx70_list else "EGX100")
+                index_name = "EGX30"
                 
                 status_text.markdown(f"**⏳ جاري فحص:** {arabic_name} ({fav_ticker}) ... [{i+1}/{len(favorites_list)}]")
                 res = analyze_stock_cached(fav_ticker, fav_yf_period, fav_yf_interval, arabic_name, sector_name, index_name)
@@ -1173,7 +1124,7 @@ with tabs[5]:
 
             arabic_name = stock_names.get(ticker, "")
             sector_name = stock_sectors.get(ticker, "غير محدد")
-            index_name = "EGX30" if ticker in egx30_list else ("EGX70" if ticker in egx70_list else "-")
+            index_name = "EGX30"
 
             res_live = analyze_stock_cached(ticker, port_yf_period, port_yf_interval, arabic_name, sector_name, index_name)
             if res_live:
