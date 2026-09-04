@@ -9,7 +9,7 @@ def calculate_rsi(data, window=14):
     # Wilder's smoothing: alpha = 1/window
     ema_up = up.ewm(alpha=1/window, adjust=False).mean()
     ema_down = down.ewm(alpha=1/window, adjust=False).mean()
-    rs = ema_up / ema_down
+    rs = ema_up / (ema_down + 1e-10)
     return 100 - (100 / (1 + rs))
 
 def calculate_macd(close):
@@ -218,9 +218,9 @@ def calculate_pivot_points(high, low, close):
       S1 = 2*PP - H,   R1 = 2*PP - L
       S2 = PP - (H-L),  R2 = PP + (H-L)
     """
-    h = float(high.iloc[-2]) if len(high) >= 2 else float(high.iloc[-1])
-    l = float(low.iloc[-2]) if len(low) >= 2 else float(low.iloc[-1])
-    c = float(close.iloc[-2]) if len(close) >= 2 else float(close.iloc[-1])
+    h = float(high.iloc[-1])
+    l = float(low.iloc[-1])
+    c = float(close.iloc[-1])
     
     pp = (h + l + c) / 3.0
     s1 = (2 * pp) - h
