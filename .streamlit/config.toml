@@ -1,6 +1,15 @@
 [client]
 toolbarMode = "viewer"
 
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = false
+port = 8501
+enableCORS = false
+enableXsrfProtection = false
+
 [theme]
 base = "dark"
 primaryColor = "#fd267a"
